@@ -1,28 +1,44 @@
 from passport import Passport
+from register import Register
+from datetime import date
+from prettytable import PrettyTable
 
 class User:
-	NEXT_USER_ID = 142857
-	LAST_USER_ID = 0
 	USER_ID_LIST = [] # список id пользоватлей
+	COUNT = 0 # подсчет количетва экземпляров класса User
 
-
-	def __init__(self, name: str, phone: str, email: str, user_type='user', passport=None):
+	def __init__(self, user_id: int, name: str, phone: str, email: str, user_type='user', passport=None, register=None):
+		self.is_set_user_id = False # флаг создания id
+		self.user_id = user_id
 		self.user_type = user_type # тип пользователя
 		self.name = name # Имя
 		self.phone = phone # Телефон
 		self.email = email # e-mail
-		self.passport = passport # экземпляр класса с паспортными данными
-		self.is_passport = False # флаг добавления паспортных данных
-		self.is_set_user_id = False # флаг создания id
-		self.user_id = self.NEXT_USER_ID  # id пользователя для созданного экземпляра
-		__class__.LAST_USER_ID = self.user_id # последнее присвоенное id
-		__class__.USER_ID_LIST.append(self.NEXT_USER_ID) # добавляем id пользоватлеля в список
-		__class__.NEXT_USER_ID += 1 # увеличиваем значение для следующего id
-		
-		
 
+		self.register = register # экземпляр класса Register (регистрационные данные)
+
+		self.passport = passport # экземпляр класса Passport (паспортные данные)
+		self.is_passport = False # флаг добавления паспортных данных
+
+		__class__.USER_ID_LIST.append(self.user_id) # добавляем id пользоватлеля в список
+
+		__class__.COUNT += 1
+
+		
 	def __repr__(self):
-		return f"{self.__class__.__name__}({self.name}, {self.phone}, {self.email}, {self.user_type})"
+		return f"{self.__class__.__name__}({self.user_id}, {self.name}, {self.phone}, {self.email}, {self.user_type})"
+
+	def __str__(self):
+		user_data = PrettyTable()
+		ud = user_data
+		ud.field_names = ["id", "name", "phone", "email", "user_type"] # column name
+		ud._min_width = {"id" : 10, "name": 20, "phone": 20, "email": 20, "user_type": 20} # column width 
+		ud.align["name"] = "l" # text-align: left
+		ud.align["phone"] = "l" # text-align: left
+		ud.align["email"] = "l" # text-align: left
+		ud.align["user_type"] = "l" # text-align: left
+		ud.add_row([self.user_id, self.name, self.phone, self.email, self.user_type])	
+		return str(ud)
 
 
 	@property
@@ -31,14 +47,15 @@ class User:
 
 	@user_id.setter
 	def user_id(self, value):
-		if self.is_set_user_id == False: # id устанавливается только при создании экземпляра, 1 раз
-			self._user_id = value
-			self.is_set_id = True
-		else:
+		if self.is_set_user_id == True: # попытка изменить id после создания экземпляра
 			raise Warning ('Невозможно изменить id пользователя')
+		elif value in __class__.USER_ID_LIST: # добавление новго экземпляра с таким же id как у добвленного 
+			raise Warning ('Пользователь с таким id уже существует')
+		else:
+			self._user_id = value
+			self.is_set_user_id = True
 
-
-
+	# ПАСПОРТНЫЕ ДАННЫЕ
 	def add_passport(self, passport_data: (list, tuple)):
 		"""Добавляет паспортные данные"""
 		self.passport = Passport(*passport_data) # экземпляр класса Passport
@@ -49,72 +66,80 @@ class User:
 		self.passport = None
 		self.is_passport = False
 
+	# РЕГИСТРАЦИОННЫЕ ДАННЫЕ
+	def reg(self, login, password):
+		"""Добавляет регестрационные данные"""
+		self.register = Register(login, password)
 
 
 class Admin(User):
-	def __init__(self, name = '-', phone = '-', email = '-', user_type='admin'):
-		super().__init__(name, phone, email, user_type)
-
+	COUNT = 0 # подсчет количетва экземпляров класса Admin
+	def __init__(self, user_id, name = '-', phone = '-', email = '-', user_type='admin'):
+		super().__init__(user_id, name, phone, email, user_type)
+		__class__.COUNT += 1
 
 
 class Landlord(User):
-	def __init__(self, name: str, phone: str, email: str, basis_for_rent: str, user_type='landlord'):
-		super().__init__(name, phone, email, user_type)
+	COUNT = 0 # подсчет количетва экземпляров класса Landlord
+	def __init__(self, user_id, name: str, phone: str, email: str, basis_for_rent: str, user_type='landlord'):
+		super().__init__(user_id, name, phone, email, user_type)
 		self.basis_for_rent = basis_for_rent # документ-основание для сдачи в аренду
-
+		__class__.COUNT += 1
 
 
 class Tenant(User):
-	def __init__(self, name: str, phone: str, email: str, user_type='tenant'):
-		super().__init__(name, phone, email, user_type)
+	COUNT = 0 # подсчет количетва экземпляров класса Tenant
+	def __init__(self, user_id, name: str, phone: str, email: str, user_type='tenant'):
+		super().__init__(user_id, name, phone, email, user_type)
+		__class__.COUNT += 1
+
 
 
 if __name__ == "__main__":
-	admin = Admin()
 
-	landlord_data = ['Смирнов Никита Алексеевич', 911, '55@sdsd.ru', 'Договор дарения 78 АБ 4270028']
-	landlord = Landlord(*landlord_data)
+	sofia = Landlord(2, 'София', '+79218887722', 'sofia@mail.ru', 'Дговор купли-продажи 78 АБ')
+	print(sofia)
+	sofia_passport_data = ['София',
+				 'Алексеевна',
+				 'Бонд',
+				 4345,
+				 601588,
+				 'ТП №56 северного района гор. Санкт-Петербурга',
+				 '503-304',
+				 date(2006, 2, 11),
+				 date(1986, 3, 25),
+				 'Ленинград',
+				 'Санкт-Петербург, Невский проспект 50-12']
 
-	tenant_data = ['Никита', 911, '55@sdsd.ru']
-	tenant = Tenant(*tenant_data)
-	tenant2 = Tenant(*tenant_data)
+	sofia.add_passport(sofia_passport_data)
 
-	print(admin)
-	print(landlord)
-	print(tenant)
+	sofia.reg('sofia1234', 'xc2sacv45')
 
-	print(admin.user_id)
-	print(landlord.user_id)
-	print(tenant.user_id)
-	print(tenant2.user_id)
+	print(sofia.passport)
 
-	# tenant.user_id = 142860
-
-
-
-	print(User.NEXT_USER_ID, User.LAST_USER_ID)
-
+	print(sofia.register)
 
 
-	print(tenant.USER_ID_LIST)
 
 
-	from datetime import date
-	pd = ['Никита',
-	      'Алексеевич',
-		  'Фролов',
-		  4345,
-		  601588,
-		 'ТП №56 северного района гор. Санкт-Петербурга',
-		 '503-304',
-		 date(2006, 2, 11),
-		 date(1986, 3, 25),
-		 'Ленинград',
-		 'Санкт-Петербург, Невский проспект 50-12']
+	
 
-	tenant.add_passport(pd)
-	print(tenant.passport)
-	print(tenant.is_passport)
-	tenant.passport.first_name = 'Василий' # изменение паспортных данных
-	print(tenant.passport.first_name) 
+	nikita = Admin(1)
+	ashot = Tenant(3, 'Ашот', '+79110998723', 'ashot@mail.ru')
+	ashot_passport_data = ['Ашот',
+			 'Саркесянович',
+			 'Ахмедов',
+			 4145,
+			 611588,
+			 'ТП №23 горного райна Дагестана',
+			 '503-304',
+			 date(2003, 5, 12),
+			 date(1980, 4, 1),
+			 'Село Мужская честь',
+			 'Краснодарский край, Село Мужская честь, ул. Брутальная 12']
+
+	ashot.add_passport(ashot_passport_data)
+	ashot.reg('ashot1', 'dcgds002')
+
+
 

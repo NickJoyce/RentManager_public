@@ -16,6 +16,7 @@ class Passport:
 		self.place_of_birth = place_of_birth # место рождения
 		self.registration = registration # адрес прописки
 
+	# TODO сделать геттеры и сеттеры атрибутов для проверки соответствия типов данных
 
 	def __repr__(self):
 		name = f'{self.last_name}, {self.first_name}, {self.patronymic}, '
@@ -58,6 +59,5 @@ if __name__ == '__main__':
 					 date(1986, 3, 25),
 					 'Ленинград',
 					 'Санкт-Петербург, Невский проспект 50-12']
-
 	passport = Passport(*passport_data)
 	print(passport)
