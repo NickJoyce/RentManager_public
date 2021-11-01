@@ -1,12 +1,12 @@
 from prettytable import PrettyTable
 
 class Payments:
-	def __init__(self, general_utilities: float, gas: float, electricity: float, overhaul: float, water: float):
-		self.general_utilities = general_utilities # общие ку
-		self.gas = gas # газ
-		self.electricity = electricity # электричество
-		self.overhaul = overhaul # капитальный ремонт
-		self.water = water # вода
+	def __init__(self):
+		self.general_utilities = 0.0 # общие ку
+		self.gas = 0.0 # газ
+		self.electricity = 0.0 # электричество
+		self.overhaul = 0.0 # капитальный ремонт
+		self.water = 0.0 # вода
 
 	def __repr__(self):
 		return f'{self.__class__.__name__}({self.general_utilities}, {self.gas}, {self.electricity}, {self.overhaul}, {self.water})'
@@ -27,6 +27,5 @@ class Payments:
 		return str(table)
 
 if __name__ == '__main__':
-	test_data =  [2500.02, 216.88, 418.12, 337.01, 329.15]
-	payments = Payments(*test_data)
+	payments = Payments()
 	print(payments)

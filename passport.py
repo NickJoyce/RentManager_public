@@ -2,8 +2,10 @@ from datetime import date
 from prettytable import PrettyTable
 
 class Passport:
-	def __init__(self, first_name: str,  patronymic: str, last_name: str, serie: int, number: int, authority: str,  
-		               department_code: str, date_of_issue: 'date', date_of_birth: 'date', place_of_birth: str, registration: str):
+	def __init__(self, passport_id, user_id, first_name, patronymic, last_name, serie, number, authority, department_code,
+		               date_of_issue, date_of_birth, place_of_birth,  registration):
+		self.passport_id = passport_id # id паспорта
+		self.user_id = user_id # id пользователя
 		self.first_name = first_name # имя
 		self.patronymic = patronymic # отчетсво
 		self.last_name = last_name # фамилия
@@ -32,7 +34,9 @@ class Passport:
 		pd._min_width = {"Наименование данных" : 25, "Значения" : 30} # column width 
 		pd.align["Наименование данных"] = "l" # text-align: left
 		pd.align["Значения"] = "l" # text-align: left
-		dict_ = {'Имя': self.first_name,
+		dict_ = {'passport_id':self.passport_id,
+				 'user_id':self.user_id,
+				 'Имя': self.first_name,
 				 'Отчество': self.patronymic,
 				 'Фамилия': self.last_name,
 				 'Серия и номер': f'{self.serie} {self.number}',
@@ -48,16 +52,6 @@ class Passport:
 
 
 if __name__ == '__main__':
-	passport_data = ['Никита',
-					 'Алексеевич',
-					 'Фролов',
-					 4345,
-					 601588,
-					 'ТП №56 северного района гор. Санкт-Петербурга',
-					 '503-304',
-					 date(2006, 2, 11),
-					 date(1986, 3, 25),
-					 'Ленинград',
-					 'Санкт-Петербург, Невский проспект 50-12']
-	passport = Passport(*passport_data)
+
+	passport = Passport(1)
 	print(passport)
