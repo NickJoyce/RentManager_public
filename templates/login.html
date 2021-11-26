@@ -1,0 +1,30 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>{{ the_title }}</title> <!-- Директива Jinja2 указывает, что значение будет вставлено перед отправкой страницы (аргумент шаблона) -->
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"> 
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/style_login.css') }}"> 
+	</head>
+	<body>
+		<!-- мгновенные сообщения -->
+		{% for cat, msg in get_flashed_messages(True) %}
+		<div class='flash {{cat}}'>{{msg}}</div>
+		{% endfor %}
+		
+		<div class='login_wrapper'>
+			<form method='POST' action='/login'>
+				<div class='reg_form'>
+					<div class='login_text'>login</div> 
+					<div class='login'><input name='login' type='TEXT' autocomplete="off" required></div>
+
+					<div class='password_text'>password</div> 
+					<div class='password'><input name='password' type='password' autocomplete="off" required></div>
+
+					<div></div>
+					<input  class='login_button' value='Войти' type='SUBMIT'>
+				</div>
+			</form> 
+		</div>
+	</body>
+</html>

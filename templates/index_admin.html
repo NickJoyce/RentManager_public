@@ -1,0 +1,23 @@
+{% extends 'base.html' %} <!-- Директива extends задает разметку базового шаблона -->
+
+{% block breadcrumbs %} 
+	{{the_title}}
+{% endblock %}
+
+
+{% block left_menu %} 
+	<a href="{{ url_for('admin_landlords') }}" class='left_menu_item'><div>Наймодатели</div></a>
+<!-- 	<a href="" class='left_menu_item'><div>Наниматели</div></a>
+	<a href="" class='left_menu_item'><div>Агенты</div></a>
+	<a href="" class='left_menu_item'><div>Объекты</div></a>
+	<a href="" class='left_menu_item'><div>Договоры</div></a> -->
+{% endblock %}
+
+{% block main_content %}
+{% for cat, msg in get_flashed_messages(True) %}
+<div class='flash {{cat}}'>{{msg}}</div>
+{% endfor %}
+Дашборд администратора
+{% endblock %}
+
+

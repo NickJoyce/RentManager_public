@@ -1,0 +1,13 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>{{ the_title }}</title> <!-- Директива Jinja2 указывает, что значение будет вставлено перед отправкой страницы (аргумент шаблона) -->
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"> 
+	</head>
+	<body>
+		{% block content %}
+				<!-- Директивы Jinja2 указывают, что сюда будет поставлен блок html, который определяется страницей, наследующей шаблон -->
+		{% endblock %}
+	</body>
+</html>

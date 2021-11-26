@@ -943,7 +943,7 @@
 											"top": 79,
 											"width": 151,
 											"height": 13,
-											"text": "Conditions"
+											"text": "GeneralConditions"
 										},
 										{
 											"_type": "LabelView",
@@ -3166,7 +3166,7 @@
 					"_parent": {
 						"$ref": "AAAAAAFF+qBWK6M3Z8Y="
 					},
-					"name": "Conditions",
+					"name": "GeneralConditions",
 					"ownedElements": [
 						{
 							"_type": "UMLAssociation",

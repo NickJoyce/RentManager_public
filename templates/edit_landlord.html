@@ -1,0 +1,116 @@
+{% extends 'index_admin.html' %} <!-- Директива extends задает разметку базового шаблона -->
+
+{% block breadcrumbs %} 
+Главная: администратор -> Наймодатели -> {{the_title}}
+{% endblock %}
+
+{% block main_content %} 
+<!-- мгновенные сообщения -->
+{% for cat, msg in get_flashed_messages(True) %}
+<div class='flash {{cat}}'>{{msg}}</div>
+{% endfor %}
+
+<div class='details_area_wrapper '>
+	<!-- Tab links -->
+	<div class="tab">
+	  <button class="tablinks" onclick="openData(event, 'landlord_info')" id="defaultOpen">Личные данные</button>
+	  <button class="tablinks" onclick="openData(event, 'passport')">Паспорт</button>
+	  <button class="tablinks" onclick="openData(event, 'register')">Регистрационные данные</button>
+	</div>
+
+
+	<!-- Tab content -->
+	<!-- user_info content: -->
+	<div id="landlord_info" class="tabcontent">
+		<div class='form_wrapper'>
+			<form method='POST' action='/edit_landlord/{{landlord.user_id}}'>
+				<input type="hidden" value="landlord_info_tab" name='source'/>
+				<input type="hidden" value="{{landlord.user_id}}" name='user_id'/>
+				<div class="form_items">
+						<div class='item_text'>Имя</div> 
+						<div><input class='item_input' name='name' type='TEXT' value="{{landlord.name}}" autocomplete="off" required></div>
+						<div class='item_text'>Телефон</div> 
+						<div><input class='item_input' name='phone' type='TEXT' value="{{landlord.phone}}" autocomplete="off" required></div>
+						<div class='item_text'>Email</div> 
+						<div><input class='item_input' name='email' type='TEXT' value="{{landlord.email}}" autocomplete="off" required></div>
+				</div>
+				<div class="form_items">
+					<div class='item_text'>ИНН</div> 
+					<div><input class='item_input' name='inn' type='TEXT' value="{{landlord.inn}}" autocomplete="off"></div>
+				</div>
+
+				<div class='form_items'>
+					<div></div> 
+					<div class='item_button'><input value='Сохранить' type='SUBMIT'></div>
+				</div>
+			</form>
+		</div>
+	</div>
+
+
+
+	<!-- passport content: -->
+	<div id="passport" class="tabcontent">
+		<div class='form_wrapper'>
+			<form method='POST' action='/edit_landlord/{{landlord.user_id}}'>
+				<input type="hidden" value="passport_tab" name='source'/>	
+				<div class="form_items">
+					<div class='item_text'>Фамилия</div> 
+					<div><input class='item_input' name='last_name' type='TEXT' value="{{landlord.passport.last_name}}" autocomplete="off" required></div>		
+					<div class='item_text'>Имя</div> 
+					<div><input class='item_input' name='first_name' type='TEXT' value="{{landlord.passport.first_name}}" autocomplete="off" required></div>
+					<div class='item_text'>Отчество</div> 
+					<div><input class='item_input' name='patronymic' type='TEXT' value="{{landlord.passport.patronymic}}"  autocomplete="off" required></div>
+					<div class='item_text'>Серия</div> 
+					<div><input class='item_input' name='serie' type='TEXT' value="{{landlord.passport.serie}}"  autocomplete="off" required></div>
+					<div class='item_text'>Номер</div> 
+					<div><input class='item_input' name='pass_number' type='TEXT' value="{{landlord.passport.pass_number}}"  autocomplete="off" required></div>
+					<div class='item_text'>Орган выдавший пасспорт</div> 
+					<div><input class='item_input' name='authority' type='TEXT' value="{{landlord.passport.authority}}"  autocomplete="off" required></div>
+					<div class='item_text'>Код подразделения</div> 
+					<div><input class='item_input' name='department_code' type='TEXT' value="{{landlord.passport.department_code}}"  autocomplete="off" required></div>
+					<div class='item_text'>Дата выдачи</div> 
+					<div><input class='item_input' name='date_of_issue' type='date' value="{{landlord.passport.date_of_issue}}"  autocomplete="off" required></div>
+					<div class='item_text'>Дата рождения</div> 
+					<div><input class='item_input' name='date_of_birth' type='date' value="{{landlord.passport.date_of_birth}}"  autocomplete="off" required></div>
+					<div class='item_text'>Место рождения</div> 
+					<div ><input class='item_input' name='place_of_birth' type='TEXT' value="{{landlord.passport.place_of_birth}}"  autocomplete="off" required></div>
+					<div class='item_text'>Регистрация</div> 
+					<div><input class='item_input' name='registration' type='TEXT' value="{{landlord.passport.registration}}"  autocomplete="off" required></div>
+				</div>
+				<div class='form_items'>
+					<div></div> 
+					<div class='item_button'><input value='Сохранить' type='SUBMIT'></div>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<div id="register" class="tabcontent">
+		<div class='form_wrapper'>
+			<form method='POST' action='/edit_landlord/{{landlord.user_id}}'>
+				<input type="hidden" value="register_tab" name='source'/>	
+				<input type="hidden" value="{{landlord.user_id}}" name='user_id'/>
+				<div class="form_items">
+						<div class='item_text'>Логин наймодателя</div> 
+						<div class='item_text'>{{landlord.register.login}}</div>
+				</div>
+				<div class="form_items">
+						<div class='item_text'>Пароль текущего пользователя</div> 
+						<div><input class='item_input' name='admin_password' type='password'  autocomplete="off" required></div>
+				</div>
+
+				<div class="form_items">
+						<div class='item_text'>Новый пароль для {{landlord.register.login}}</div> 
+						<div><input class='item_input' name='landlord_password' type='password'  autocomplete="off"></div>
+				</div>
+
+				<div class='form_items'>
+					<div></div> 
+					<div class='item_button'><input value='Изменить' type='SUBMIT'></div>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+{% endblock %}

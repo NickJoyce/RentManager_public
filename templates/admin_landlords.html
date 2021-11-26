@@ -1,0 +1,34 @@
+{% extends 'index_admin.html' %} <!-- Директива extends задает разметку базового шаблона -->
+
+{% block breadcrumbs %} 
+Главная: администратор -> {{the_title}}
+{% endblock %}
+
+{% block main_content %} 
+	<div class='any_users'>
+		<div class='add_user'>
+			<button class='add_button' onclick="document.location='{{ add_landlord }}'">+ add landlord</button>
+		</div>
+		<table>
+			<tr><th>user_id</th><th>landlord_id</th><th>Имя</th><th>Телефон</th><th>Email</th></tr>
+			{% for landlord in landlords %}
+				<tr>
+					<td>{{landlord.user_id}}</td>
+					<td>{{landlord.landlord_id}}</td>					
+					<td>{{landlord.name}}</td>
+					<td>{{landlord.phone}}</td>
+					<td>{{landlord.email}}</td>
+					<td>
+						<button class='add_button' onclick="document.location='/edit_landlord/{{landlord.user_id}}'">...</button>
+					</td>
+					<td>
+						<form method='POST' action='/delete_landlord'>
+							<input type="hidden" value="{{landlord.user_id}}" name='user_id'/>
+							<button class='delete_button'>x</button>
+						</form>
+					</td>
+				</tr>
+			{% endfor %}
+		</table>
+	</div>
+{% endblock %}

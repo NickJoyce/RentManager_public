@@ -1,0 +1,29 @@
+.login_wrapper{
+width: 100%;
+height: 100%;
+padding-top: 100px;
+background: var(--main-theme_color);
+}
+
+.reg_form{
+background: grey;
+margin: 0 auto;
+width: 260px;
+display: grid;
+grid-template-columns: 1fr 1fr;
+grid-auto-rows: 30px;
+align-items: center;
+padding: 10px 20px;
+grid-column-gap: 5px;
+grid-row-gap: 5px;
+color: #ffffff;
+}
+
+.login_text{}
+.login{}
+.password_text{}
+.password{}
+
+.login_button{
+align-self: center;
+}

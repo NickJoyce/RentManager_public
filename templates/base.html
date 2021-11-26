@@ -1,0 +1,75 @@
+<!-- TEST DATA -->
+<div class='check_data'>
+<div>{{session}}</div><div>2</div>
+</div>
+
+<!-- TEST REFERENCES -->
+<div class='check_ref'>
+<a href="{{ url_for('index') }}">index</a>
+<a href="{{ url_for('index_admin') }}">admin</a>	
+<a href="{{ url_for('index_landlord') }}">landlord</a>
+<a href="{{ url_for('index_tenant') }}">tenant</a>
+<a href="{{ url_for('index_agent') }}">agent</a>
+</div>
+
+<!-- ------------------------------------------------------------ -->
+
+
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>{{ the_title }}</title> <!-- Директива Jinja2 указывает, что значение будет вставлено перед отправкой страницы (аргумент шаблона) -->
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"> 
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/style_admin.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/style_agent.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/style_landlord.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/style_tenant.css') }}">
+	</head>
+	<body>
+		<!-- мгновенные сообщения -->
+<!-- 		{% for cat, msg in get_flashed_messages(True) %}
+		<div class='flash {{cat}}'>{{msg}}</div>
+		{% endfor %} -->
+		
+		<div class='wrapper'>
+			<div class='top_menu'>
+				<div class='top_menu_empty'></div>
+				<div class='top_menu_user_name'>{{user_name}}</div>
+				<div class='top_menu_separator'>|</div>
+				<div class='top_menu_exit'><a href="{{ url_for('logout') }}">Выход</a></div>
+			</div>
+
+
+			<div class='left_menu_header'>
+				<p class=left_menu_header_text>Menu</p>
+			</div>
+
+
+			<div class='breadcrumbs'>
+				<div class=breadcrumbs_text>
+				{% block breadcrumbs %} 
+
+				{% endblock %}
+
+				 </div>				
+			</div>
+
+			<div class='left_menu'> 
+				{% block left_menu %} 
+
+				{% endblock %}
+			</div>
+
+			<div class='main_content'>
+				{% block main_content %} 
+			
+				{% endblock %}
+			</div>
+			
+			<div class='footer'>footer</div>
+		</div>
+	<script src="{{ url_for('static', filename='js/tabs.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/default_tab.js') }}"></script>
+	</body>
+</html>

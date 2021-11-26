@@ -1,0 +1,1 @@
+db_config = {'host': '127.0.0.1', 'user': 'olddog', 'password': 'omg777', 'database': 'rent_manager_db'}
