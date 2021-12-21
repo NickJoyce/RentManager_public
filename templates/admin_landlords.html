@@ -22,8 +22,9 @@
 						<button class='add_button' onclick="document.location='/edit_landlord/{{landlord.user_id}}'">...</button>
 					</td>
 					<td>
-						<form method='POST' action='/delete_landlord'>
+						<form method='POST' action='/delete_user'>
 							<input type="hidden" value="{{landlord.user_id}}" name='user_id'/>
+							<input type="hidden" value="{{landlord.user_type}}" name='user_type'/>
 							<button class='delete_button'>x</button>
 						</form>
 					</td>

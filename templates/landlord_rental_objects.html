@@ -1,0 +1,33 @@
+{% extends 'index_landlord.html' %} <!-- Директива extends задает разметку базового шаблона -->
+
+{% block breadcrumbs %} 
+Главная: наймодатель -> {{the_title}}
+{% endblock %}
+
+{% block main_content %} 
+	<div class='any_rental_objects'>
+		<div class='add_rental_object'>
+			<button class='add_button' onclick="document.location='{{url_for('add_rental_object')}}'">+ add rental object</button>
+		</div>
+		<table>
+			<tr><th>Тип</th><th>Имя</th><th></th><th></th></tr>
+			{% for rental_object in rental_objects %}
+				<tr>					
+					<td>{{rental_object.type}}</td>
+					<td>{{rental_object.name}}</td>
+					<td>
+
+						<button class='add_button' onclick="document.location='{{url_for('edit_rental_object', rental_object_id=rental_object.id)}}'">...</button>
+
+					</td>
+					<td>
+						<form method='POST' action='/delete_rental_object'>
+							<input type="hidden" value="{{rental_object.id}}" name='rental_object_id'/>
+							<button class='delete_button'>x</button>
+						</form>
+					</td>
+				</tr>
+			{% endfor %}
+		</table>
+	</div>
+{% endblock %}

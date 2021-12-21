@@ -10,12 +10,15 @@
 <div class='flash {{cat}}'>{{msg}}</div>
 {% endfor %}
 
+<input type="hidden" id='tab_page'/>
+<input type="hidden" id='form_page'/>
+
 <div class='details_area_wrapper '>
 	<!-- Tab links -->
 	<div class="tab">
-	  <button class="tablinks" onclick="openData(event, 'landlord_info')" id="defaultOpen">Личные данные</button>
-	  <button class="tablinks" onclick="openData(event, 'passport')">Паспорт</button>
-	  <button class="tablinks" onclick="openData(event, 'register')">Регистрационные данные</button>
+	  <button class="tablinks" onclick="openData(event, 'landlord_info')" id="l_info_button">Личные данные</button>
+	  <button class="tablinks" onclick="openData(event, 'passport')" id="l_passport_button">Паспорт</button>
+	  <button class="tablinks" onclick="openData(event, 'register')" id="l_register_button">Регистрационные данные</button>
 	</div>
 
 

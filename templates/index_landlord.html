@@ -6,14 +6,14 @@
 
 
 {% block left_menu %} 
-	<a href="" class='left_menu_item'><div>Объекты аренды</div></a>
-	<a href="" class='left_menu_item'><div>Жильцы</div></a>
-	<a href="" class='left_menu_item'><div>Агенты</div></a>
-	<a href="" class='left_menu_item'><div>Договоры</div></a>
+	<a href="{{ url_for('landlord_rental_objects') }}"  class='left_menu_item'><div>Объекты аренды</div></a>
+	<a href="{{ url_for('landlord_tenants') }}" class='left_menu_item'><div>Наниматели</div></a>
+	<a href="{{ url_for('landlord_agents') }}" class='left_menu_item'><div>Агенты</div></a>
+	<a href="{{ url_for('landlord_rental_agreements') }}" class='left_menu_item'><div>Договоры</div></a>
 {% endblock %}
 
 
 {% block main_content %} 
 
 {% endblock %}
-
+	

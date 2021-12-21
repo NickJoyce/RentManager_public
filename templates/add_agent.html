@@ -1,0 +1,16 @@
+{% extends 'index_landlord.html' %} <!-- Директива extends задает разметку базового шаблона -->
+
+{% block breadcrumbs %} 
+Главная: наймодатель -> Агенты -> {{the_title}}
+{% endblock %}
+
+{% block main_content %} 
+	<!-- мгновенные сообщения -->
+	{% for cat, msg in get_flashed_messages(True) %}
+	<div class='flash {{cat}}'>{{msg}}</div>
+	{% endfor %}
+	<form method='POST' action='/check_user_data'>
+		<input type="hidden" value="агент" name='user_type'/>
+		{% include 'add_user.html' %}
+	</form>
+{% endblock %}

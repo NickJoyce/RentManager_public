@@ -17,10 +17,41 @@ function openData(evt, dataName) {
   // Show the current tab, and add an "active" class to the button that opened the tab
   document.getElementById(dataName).style.display = "block";
   evt.currentTarget.className += " active";
+  document.cookie = `lastPressedButton=${document.querySelector('.active').id}`
 }
 
+/*
+ * Извлекает данные из cookie по ключу
+ *
+ * @param {string} name - ключ для поиска значения ()
+
+ */
+function getCookie(name) {
+  cookie = document.cookie.split('; ')
+  let value = '' 
+  for (let i of cookie) {
+    if (i.includes(name)) {
+      value = i.split('=')[1]
+      break
+    } else {
+      value = null
+    }
+  } 
+  return value
+}
+
+// -----------------------------------------------------------------------------
 
 
+
+// выполняется только если на странице есть элемент с id: tab_page
+if (document.querySelector('#tab_page')) { 
+  if (getCookie('lastPressedButton')) {
+    document.getElementById(getCookie('lastPressedButton')).click()
+  } else {tablinks = document.getElementsByClassName("tablinks");
+      document.getElementById(tablinks[0].id).click()
+    }
+}
 
 
 

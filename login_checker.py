@@ -4,6 +4,17 @@ from functools import wraps
 
 
 
+def logged_in(func):
+	""" выполнен ли вход пользователем с любым типом"""
+	@wraps(func)
+	def wrapper(*args, **kwargs):
+		if 'logged_in' in session: # вход выполнен
+			return func(*args, **kwargs)
+		else: # не выполнен		
+			flash('Вход не выполнен', category='error') 
+			return redirect(url_for('login'))
+	return wrapper
+
 
 def logged_in_admin(func):
 	""" выполнен ли вход пользователем с типом 'администратор'"""

@@ -1,4 +1,36 @@
-document.getElementById("defaultOpen").click()
+/*
+ * Извлекает данные из cookie по ключу
+ *
+ * @param {string} name - ключ для поиска значения ()
+
+ */
+function getCookie(name) {
+	cookie = document.cookie.split('; ')
+	let value = '' 
+	for (let i of cookie) {
+		if (i.includes(name)) {
+			value = i.split('=')[1]
+		}
+	} 
+	return value
+}
+
+// -----------------------------------------------------------------------------
+
+
+if (getCookie('lastPressedButton')) {
+	document.getElementById(getCookie('lastPressedButton')).click()
+} else {tablinks = document.getElementsByClassName("tablinks");
+		document.getElementById(tablinks[0].id).click()
+  }
+
+
+
+
+
+
+
+
 
 
 

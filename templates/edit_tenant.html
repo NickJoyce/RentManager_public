@@ -1,0 +1,113 @@
+{% extends 'index_landlord.html' %} <!-- Директива extends задает разметку базового шаблона -->
+
+{% block breadcrumbs %} 
+Главная: наймодатель -> Наниматели -> {{the_title}}
+{% endblock %}
+
+{% block main_content %} 
+<!-- мгновенные сообщения -->
+{% for cat, msg in get_flashed_messages(True) %}
+<div class='flash {{cat}}'>{{msg}}</div>
+{% endfor %}
+
+<input type="hidden" id='tab_page'/>
+
+<div class='details_area_wrapper '>
+	<!-- Tab links -->
+	<div class="tab">
+	  <button class="tablinks" onclick="openData(event, 'info')" id="t_info_button">Личные данные</button>
+	  <button class="tablinks" onclick="openData(event, 'passport')" id="t_passport_button">Паспорт</button>
+	  <button class="tablinks" onclick="openData(event, 'register')" id="t_register_button">Регистрационные данные</button>
+	</div>
+
+
+	<!-- Tab content -->
+	<!-- user_info content: -->
+	<div id="info" class="tabcontent">
+		<div class='form_wrapper'>
+			<form method='POST' action='/edit_tenant/{{tenant.user_id}}'>
+				<input type="hidden" value="info_tab" name='source'/>
+				<input type="hidden" value="{{tenant.user_id}}" name='user_id'/>
+				<div class="form_items">
+						<div class='item_text'>Имя</div> 
+						<div><input class='item_input' name='name' type='TEXT' value="{{tenant.name}}" autocomplete="off" required></div>
+						<div class='item_text'>Телефон</div> 
+						<div><input class='item_input' name='phone' type='TEXT' value="{{tenant.phone}}" autocomplete="off" required></div>
+						<div class='item_text'>Email</div> 
+						<div><input class='item_input' name='email' type='TEXT' value="{{tenant.email}}" autocomplete="off" required></div>
+				</div>
+				<div class='form_items'>
+					<div></div> 
+					<div class='item_button'><input value='Сохранить' type='SUBMIT'></div>
+				</div>
+			</form>
+		</div>
+	</div>
+
+
+
+	<!-- passport content: -->
+	<div id="passport" class="tabcontent">
+		<div class='form_wrapper'>
+			<form method='POST' action='/edit_tenant/{{tenant.user_id}}'>
+				<input type="hidden" value="passport_tab" name='source'/>	
+				<div class="form_items">
+					<div class='item_text'>Фамилия</div> 
+					<div><input class='item_input' name='last_name' type='TEXT' value="{{tenant.passport.last_name}}" autocomplete="off" required></div>		
+					<div class='item_text'>Имя</div> 
+					<div><input class='item_input' name='first_name' type='TEXT' value="{{tenant.passport.first_name}}" autocomplete="off" required></div>
+					<div class='item_text'>Отчество</div> 
+					<div><input class='item_input' name='patronymic' type='TEXT' value="{{tenant.passport.patronymic}}"  autocomplete="off" required></div>
+					<div class='item_text'>Серия</div> 
+					<div><input class='item_input' name='serie' type='TEXT' value="{{tenant.passport.serie}}"  autocomplete="off" required></div>
+					<div class='item_text'>Номер</div> 
+					<div><input class='item_input' name='pass_number' type='TEXT' value="{{tenant.passport.pass_number}}"  autocomplete="off" required></div>
+					<div class='item_text'>Орган выдавший пасспорт</div> 
+					<div><input class='item_input' name='authority' type='TEXT' value="{{tenant.passport.authority}}"  autocomplete="off" required></div>
+					<div class='item_text'>Код подразделения</div> 
+					<div><input class='item_input' name='department_code' type='TEXT' value="{{tenant.passport.department_code}}"  autocomplete="off" required></div>
+					<div class='item_text'>Дата выдачи</div> 
+					<div><input class='item_input' name='date_of_issue' type='date' value="{{tenant.passport.date_of_issue}}"  autocomplete="off" required></div>
+					<div class='item_text'>Дата рождения</div> 
+					<div><input class='item_input' name='date_of_birth' type='date' value="{{tenant.passport.date_of_birth}}"  autocomplete="off" required></div>
+					<div class='item_text'>Место рождения</div> 
+					<div ><input class='item_input' name='place_of_birth' type='TEXT' value="{{tenant.passport.place_of_birth}}"  autocomplete="off" required></div>
+					<div class='item_text'>Регистрация</div> 
+					<div><input class='item_input' name='registration' type='TEXT' value="{{tenant.passport.registration}}"  autocomplete="off" required></div>
+				</div>
+				<div class='form_items'>
+					<div></div> 
+					<div class='item_button'><input value='Сохранить' type='SUBMIT'></div>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<div id="register" class="tabcontent">
+		<div class='form_wrapper'>
+			<form method='POST' action='/edit_tenant/{{tenant.user_id}}'>
+				<input type="hidden" value="register_tab" name='source'/>	
+				<input type="hidden" value="{{tenant.user_id}}" name='user_id'/>
+				<div class="form_items">
+						<div class='item_text'>Логин нанимателя</div> 
+						<div class='item_text'>{{tenant.register.login}}</div>
+				</div>
+				<div class="form_items">
+						<div class='item_text'>Пароль текущего пользователя</div> 
+						<div><input class='item_input' name='tenant_password' type='password'  autocomplete="off" required></div>
+				</div>
+
+				<div class="form_items">
+						<div class='item_text'>Новый пароль для {{tenant.register.login}}</div> 
+						<div><input class='item_input' name='tenant_password' type='password'  autocomplete="off"></div>
+				</div>
+
+				<div class='form_items'>
+					<div></div> 
+					<div class='item_button'><input value='Изменить' type='SUBMIT'></div>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+{% endblock %}

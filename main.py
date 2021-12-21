@@ -1,5 +1,6 @@
 from werkzeug.security import generate_password_hash, check_password_hash 
 import os
+import json
 
 # ------------------------------------------------------------------------------------------------------------------------------
 from flask import Flask, render_template, request, url_for, redirect, session, flash, abort,make_response # импортируем функции модуля flask
@@ -14,19 +15,19 @@ application.config['APP_ROOT'] = os.path.dirname(os.path.abspath(__file__))
 
 from datetime import date
 
-from login_checker import logged_in_admin, logged_in_landlord, logged_in_tenant, logged_in_agent
-
-from rental_agreement import RentalAgreement # договор аренды
+from login_checker import logged_in, logged_in_admin, logged_in_landlord, logged_in_tenant, logged_in_agent
 
 from users import User, Admin, Agent, Landlord, Tenant # пользователи
 from passport import Passport # паспортные данные пользователей
 from register import Register # регистрационные данные пользоватлей
 
-from rental_objects import Room, Flat, House # объекты аренды
+from rental_objects import RentalObject, Room, Flat, House # объекты аренды
+from rental_object_data import General, ObjectData, Building, Location, Appliances, Thing, Cost
 
-from rental_agreement_conditions import GeneralConditions# условия аренды, дополнительны платежи
+from rental_agreement import RentalAgreement # договор аренд
+from rental_agreement_conditions import Conditions# условия аренды, дополнительны платежи
+from rental_agreement_docs import MoveIn, MoveOut, Termination, Renewal
 
-from rental_object_data import General, ObjectData, Building, Location, Appliance, Costs
 
 # ВЗАИМОДЕЙСТВИЕ С БД
 from database.config import db_config # параметры для подключения к БД
@@ -79,6 +80,10 @@ def login() -> 'html':
 					session['landlords'] = db.get_landlord_user_id_of_admin(session['admin_id']) # список user_id наймодателей, данного администратора 
 				elif session['user_type'] == 'наймодатель':
 					session['landlord_id'] = db.get_landlord_id(session['user_id']) # id наймодателя
+					session['tenants'] = db.get_tenant_user_id_of_landlord(session['landlord_id'])
+					session['agents'] = db.get_agent_user_id_of_landlord(session['landlord_id']) 
+					session['rental_objects'] = db.get_rental_object_id_of_landlord(session['landlord_id'])
+					session['rental_agreements'] = db.get_rental_agreement_id_of_landlord(session['landlord_id']) 
 				elif session['user_type'] == 'наниматель':
 					session['tenant_id'] = db.get_tenant_id(session['user_id'])	# id нанимателя				
 				elif session['user_type'] == 'агент':
@@ -118,38 +123,6 @@ def index() -> 'html':
 
 
 
-# __________АДМИНИСТРАТОР_________
-# __________Главная: администратор_________
-@application.route('/admin', methods=['POST','GET']) 
-@logged_in_admin
-def index_admin() -> 'html':
-	""""""
-	the_title = 'Главная: aдминистратор'
-
-	return render_template('index_admin.html', the_title=the_title, user_name=session['user_name'])
-
-
-# __________Главная: администратор -> наймодатели_________
-@application.route('/admin/landlords', methods=['POST','GET']) 
-@logged_in_admin
-def admin_landlords() -> 'html':
-	""""""
-	the_title = 'Наймодатели'
-
-	# одним запросом получаем данные из БД необходимые для создания экземпляров класса Landlord 
-	landlords_data = db.get_landlord_general_data_of_admin(session['admin_id'])
-	
-	# создаем экземпляры используя загруженные данные
-	landlords = []
-	for landlord_data in landlords_data:
-		landlords.append(Landlord(*landlord_data))
-
-	add_landlord = url_for('add_landlord') # адрес ссылки для onclick
-
-	return render_template('admin_landlords.html', the_title=the_title, user_name=session['user_name'], landlords=landlords, add_landlord=add_landlord)
-
-
-
 # __________Проверка вводимых данных_________
 @application.route('/check_user_data', methods=['POST','GET'])
 def check_user_data():
@@ -170,9 +143,9 @@ def check_user_data():
 	elif user_type == 'наймодатель':
 		url = url_for('add_landlord')
 	elif user_type == 'наниматель':
-		...	
+		url = url_for('add_tenant')
 	elif user_type =='агент':
-		...	
+		url = url_for('add_agent')
 
 	# проверки
 	user = User(None, None, None, email)
@@ -216,13 +189,47 @@ def check_user_data():
 	return redirect(url)
 
 
+
+
+# __________АДМИНИСТРАТОР_________
+# __________Главная: администратор_________
+@application.route('/admin', methods=['POST','GET']) 
+@logged_in_admin
+def index_admin() -> 'html':
+	""""""
+	the_title = 'Главная: aдминистратор'
+
+	return render_template('index_admin.html', the_title=the_title, user_name=session['user_name'])
+
+
+# __________Главная: администратор -> наймодатели_________
+@application.route('/admin/landlords', methods=['POST','GET']) 
+@logged_in_admin
+def admin_landlords() -> 'html':
+	""""""
+	the_title = 'Наймодатели'
+
+	# одним запросом получаем данные из БД необходимые для создания экземпляров класса Landlord 
+	landlords_data = db.get_landlord_data_of_admin(session['admin_id'])
+	
+	# создаем экземпляры используя загруженные данные
+	landlords = []
+	for landlord_data in landlords_data:
+		landlords.append(Landlord(*landlord_data))
+
+	add_landlord = url_for('add_landlord') # адрес ссылки для onclick
+
+	return render_template('admin_landlords.html', the_title=the_title, user_name=session['user_name'], landlords=landlords, add_landlord=add_landlord)
+
+
+
+
 # __________Главная: администратор -> наймодатели -> добавление наймодателя _________
 @application.route('/add_landlord', methods=['POST','GET'])
 @logged_in_admin
 def add_landlord() -> 'html':
 	the_title = 'Добавление наймодателя'
 	if 'temp_chek' in session:
-
 		# создаем пользователя
 		db.create_user('наймодатель', 
 						session['temp_name'], 
@@ -314,19 +321,12 @@ def edit_landlord(user_id) -> 'html':
 
 
 
-@application.route('/delete_landlord', methods=['POST','GET'])
-@logged_in_admin
-def delete_landlord() -> 'html':
-	user_id = request.form['user_id']
-	db.delete_user(user_id)
-	# обновляем список user_id наймодателей, данного администратора 
-	session['landlords'] = db.get_landlord_user_id_of_admin(session['admin_id']) 
-	return redirect(url_for('admin_landlords'))
 
 
+# ------------------------------------------------------------------------------------------------------------------------------------------------
 
-
-# __________ГЛАВНАЯ: НАЙМОДАТЕЛЬ_________
+# __________НАЙМОДАТЕЛЬ_________
+# __________Главная: администратор_________
 @application.route('/landlord', methods=['POST','GET']) 
 @logged_in_landlord
 def index_landlord() -> 'html':
@@ -335,11 +335,647 @@ def index_landlord() -> 'html':
 	user_name = session['user_name']
 	return render_template('index_landlord.html', the_title=the_title, user_name=user_name)
 
-@application.route('/landlord_tenants', methods=['POST','GET']) 
+
+# __________Главная: наймодатель -> наниматели_________
+@application.route('/landlord/tenants', methods=['POST','GET']) 
 @logged_in_landlord
 def landlord_tenants() -> 'html':
-	the_title = 'Жильцы'
+	the_title = 'Наниматели'
 	...
+	# подгружаем данные из БД для создания экземпляров класса Tenant
+	tenants_data = db.get_tenant_data_of_landlord(session['landlord_id'])
+
+	tenants = []
+	for tenant_data in tenants_data:
+		tenants.append(Tenant(*tenant_data))
+
+	add_tenant_url = url_for('add_tenant')
+
+	return render_template('landlord_tenants.html', the_title=the_title, user_name=session['user_name'], tenants=tenants, add_tenant_url=add_tenant_url)
+
+
+# __________Главная: наймодатель -> наниматели -> добавление нанимателя _________
+@application.route('/add_tenant', methods=['POST','GET'])
+@logged_in_landlord
+def add_tenant() -> 'html':
+	the_title = 'Добавление нанимателя'
+	if 'temp_chek' in session:
+		# создаем пользователя
+		db.create_user('наниматель', 
+						session['temp_name'], 
+						session['temp_phone'], 
+						session['temp_email'], 
+						session['temp_login'], 
+						session['temp_password'], 
+						landlord_id=session['landlord_id'])
+		# получаем обновленный список user_id наймодателей для данного администратора
+		session['tenants'] = db.get_tenant_user_id_of_landlord(session['landlord_id']) 
+
+		# удаляем временные данные из session
+		del session['temp_chek']
+		del session['temp_name'] 
+		del session['temp_phone']
+		del session['temp_email']
+		del session['temp_login']
+		del session['temp_password']
+
+		return redirect(url_for('landlord_tenants'))
+	else:
+		return render_template('add_tenant.html', the_title=the_title, user_name=session['user_name'])
+
+
+# __________Главная: наймодатель -> наниматели -> наниматель _________
+@application.route('/edit_tenant/<int:user_id>', methods=['POST','GET']) 
+@logged_in_landlord
+def edit_tenant(user_id) -> 'html':
+	""""""
+	if user_id in session['tenants']:
+		the_title = 'Наниматель'
+		if request.method == 'POST':
+			if request.form['source'] == 'info_tab':
+				db.set_user_data(request.form['user_id'],request.form['name'], request.form['phone'], request.form['email'])
+
+				flash(f"Личные данные успешно сохранены!", category='success')
+				return redirect(url_for('edit_tenant', user_id=user_id))
+	
+			elif request.form['source'] == 'passport_tab':
+				db.set_passport_data(
+					user_id,
+					request.form['first_name'],
+					request.form['patronymic'],
+					request.form['last_name'],
+					request.form['serie'],
+					request.form['pass_number'],
+					request.form['authority'],
+					request.form['department_code'],
+					request.form['date_of_issue'],
+					request.form['date_of_birth'],
+					request.form['place_of_birth'],
+					request.form['registration']
+					)
+				flash(f"Паспортные данные успешно сохранены!", category='success')
+				return redirect(url_for('edit_tenant', user_id=user_id))
+
+			elif request.form['source'] == 'register_tab':
+				gotten_tenant_password = request.form['tenant_password']
+				tenant_hashed_password = db.get_register_password(session['user_id'])
+				reg_login = Register(None, None)
+				if reg_login.is_correct_password(tenant_hashed_password, gotten_tenant_password):
+					tenant_password = request.form['tenant_password']
+					reg_tenant = Register(None, tenant_password)
+					errors = reg_tenant.chek_password()
+					if errors:
+						for error in errors:
+							flash(f"{error}", category='error')
+						return redirect(url_for('edit_tenant', user_id=user_id))
+					else:
+						reg_tenant.generate()
+						db.set_register_password(user_id, reg_tenant.hashed_password)
+						flash(f"Пароль для учетной записи нанимателя успешно изменен!", category='success')
+						return redirect(url_for('edit_tenant', user_id=user_id))
+
+				else:
+					flash(f"Неверный пароль текущего пользователя!", category='error')
+					return redirect(url_for('edit_tenant', user_id=user_id))
+				
+
+		else:
+			tenant = Tenant(*db.get_tenant_data(user_id))
+			tenant.passport = Passport(*db.get_passport_data(user_id))
+			tenant.register = Register(*db.get_register_data(user_id))
+			return render_template('edit_tenant.html', the_title=the_title, user_name=session['user_name'], tenant=tenant)
+	else:
+		abort(401)
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+# __________Главная: наймодатель -> агенты_________
+@application.route('/landlord/agents', methods=['POST','GET']) 
+@logged_in_landlord
+def landlord_agents() -> 'html':
+	the_title = 'Агенты'
+	...
+	# подгружаем данные из БД для создания экземпляров класса Tenant
+	agents_data = db.get_agent_data_of_landlord(session['landlord_id'])
+
+	agents = []
+	for agent_data in agents_data:
+		agents.append(Tenant(*agent_data))
+
+	add_agent_url = url_for('add_agent')
+
+	return render_template('landlord_agents.html', the_title=the_title, user_name=session['user_name'], agents=agents, add_agent_url=add_agent_url)
+
+
+# __________Главная: наймодатель -> агенты -> добавление агента _________
+@application.route('/add_agent', methods=['POST','GET'])
+@logged_in_landlord
+def add_agent() -> 'html':
+	the_title = 'Добавление агента'
+	if 'temp_chek' in session:
+		# создаем пользователя
+		db.create_user('агент', 
+						session['temp_name'], 
+						session['temp_phone'], 
+						session['temp_email'], 
+						session['temp_login'], 
+						session['temp_password'], 
+						landlord_id=session['landlord_id'])
+		# получаем обновленный список user_id наймодателей для данного администратора
+		session['agents'] = db.get_agent_user_id_of_landlord(session['landlord_id']) 
+
+		# удаляем временные данные из session
+		del session['temp_chek']
+		del session['temp_name'] 
+		del session['temp_phone']
+		del session['temp_email']
+		del session['temp_login']
+		del session['temp_password']
+
+		return redirect(url_for('landlord_agents'))
+	else:
+		return render_template('add_agent.html', the_title=the_title, user_name=session['user_name'])
+
+
+# __________Главная: наймодатель -> агенты -> агент _________
+@application.route('/edit_agent/<int:user_id>', methods=['POST','GET']) 
+@logged_in_landlord
+def edit_agent(user_id) -> 'html':
+	""""""
+	if user_id in session['agents']:
+		the_title = 'Наниматель'
+		if request.method == 'POST':
+			if request.form['source'] == 'info_tab':
+				db.set_user_data(request.form['user_id'],request.form['name'], request.form['phone'], request.form['email'])
+
+				flash(f"Личные данные успешно сохранены!", category='success')
+				return redirect(url_for('edit_agent', user_id=user_id))
+	
+			elif request.form['source'] == 'passport_tab':
+				db.set_passport_data(
+					user_id,
+					request.form['first_name'],
+					request.form['patronymic'],
+					request.form['last_name'],
+					request.form['serie'],
+					request.form['pass_number'],
+					request.form['authority'],
+					request.form['department_code'],
+					request.form['date_of_issue'],
+					request.form['date_of_birth'],
+					request.form['place_of_birth'],
+					request.form['registration']
+					)
+				flash(f"Паспортные данные успешно сохранены!", category='success')
+				return redirect(url_for('edit_agent', user_id=user_id))
+
+			elif request.form['source'] == 'register_tab':
+				gotten_agent_password = request.form['agent_password']
+				agent_hashed_password = db.get_register_password(session['user_id'])
+				reg_login = Register(None, None)
+				if reg_login.is_correct_password(agent_hashed_password, gotten_agent_password):
+					agent_password = request.form['agent_password']
+					reg_agent = Register(None, agent_password)
+					errors = reg_agent.chek_password()
+					if errors:
+						for error in errors:
+							flash(f"{error}", category='error')
+						return redirect(url_for('edit_agent', user_id=user_id))
+					else:
+						reg_agent.generate()
+						db.set_register_password(user_id, reg_agent.hashed_password)
+						flash(f"Пароль для учетной записи успешно изменен!", category='success')
+						return redirect(url_for('edit_agent', user_id=user_id))
+
+				else:
+					flash(f"Неверный пароль текущего пользователя!", category='error')
+					return redirect(url_for('edit_agent', user_id=user_id))
+				
+
+		else:
+			agent = Agent(*db.get_agent_data(user_id))
+			agent.passport = Passport(*db.get_passport_data(user_id))
+			agent.register = Register(*db.get_register_data(user_id))
+			return render_template('edit_agent.html', the_title=the_title, user_name=session['user_name'], agent=agent)
+	else:
+		abort(401)
+
+
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------
+
+# __________Главная: наймодатель -> объекты аренды _________
+@application.route('/landlord/rental_objects', methods=['POST','GET']) 
+@logged_in_landlord
+def landlord_rental_objects() -> 'html':
+	the_title = 'Объекты аренды'
+	...
+	# подгружаем данные из БД для создания экземпляров класса Tenant
+	rental_objects_data = db.get_rental_objects_data_of_landlord(session['landlord_id'])
+
+	# список экземпляров классов Room, Flat или House
+	rental_objects = []
+
+	for rental_object in rental_objects_data:
+		if rental_object[1] == 'комната':
+			# добавляем добавляем недостающий для инициализации класса аргументы (total_area, rooms_number)
+			ro = Room(*rental_object+(None,)+(None,))
+		elif rental_object[1] == 'квартира':
+			ro = Flat(*rental_object)
+		elif rental_object[1] == 'дом':
+			ro = House(*rental_object)
+
+		rental_objects.append(ro)
+
+	return render_template('landlord_rental_objects.html', the_title=the_title, user_name=session['user_name'], rental_objects=rental_objects)
+
+@application.route('/landlord/rental_objects/add_rental_object', methods=['POST','GET']) 
+@logged_in_landlord
+def add_rental_object() -> 'html':
+	the_title = 'Добавление объекта аренды'
+	if request.method == 'POST':
+		type_id = request.form['type_id']
+		name = request.form['name']
+		landlord_id = session['landlord_id']
+		db.create_rental_object(type_id, name, landlord_id)
+		session['rental_objects'] = db.get_rental_object_id_of_landlord(session['landlord_id'])
+		return redirect(url_for('landlord_rental_objects'))
+
+	else:
+		rental_objects_types = db.get_rental_objects_types()
+		return render_template('add_rental_object.html', the_title=the_title, rental_objects_types=rental_objects_types)
+
+
+# __________Главная: наймодатель -> агенты -> агент _________
+@application.route('/landlord/rental_objects/edit_rental_object/<int:rental_object_id>', methods=['POST','GET']) 
+@logged_in_landlord
+def edit_rental_object(rental_object_id) -> 'html':
+	""""""
+	if rental_object_id in session['rental_objects']:
+		the_title = 'Объект аренды'
+
+		if request.method == 'POST':
+			if request.form['source'] == 'info_tab':
+				db.set_rental_object_name(rental_object_id, request.form['name'])
+				db.set_ro_general_data(rental_object_id, request.form['cadastral_number'], request.form['title_deed'])
+				
+
+			elif request.form['source'] == 'object_tab':
+				od = ObjectData(rental_object_id, request.form['bathroom'], request.form['wash_place'],
+					  			request.form['area'], request.form['ceilings_height'], request.form['win_number'],
+								request.form['balcony'], request.form['air_conditioner'],request.form['wi_fi'],
+								request.form['furniture'], None, None, None)
+				od.window_overlook = {'street': request.form['street_overlook'], 
+									  'yard': request.form['yard_overlook']}
+
+				od.window_frame_type = {'wood': request.form['wood_frame'], 
+									    'plastic': request.form['plastic_frame']}
+
+				od.cooking_range_type = {'electric': request.form['electric_cooking_range'], 
+										 'gas': request.form['gas_cooking_range']}
+
+				# если в поле в соответствующей форме ничего не ввели
+				if od.area == '': od.area = None 
+				if od.ceilings_height == '': od.ceilings_height = None 
+				if od.win_number == '': od.win_number = None 
+
+				db.set_ro_object_data(od.rental_object_id, od.bathroom_type, od.wash_place_type, od.area, od.ceilings_height,
+								      od.win_number, od.balcony, od.air_conditioner, od.wi_fi, od.furniture)
+				db.set_ro_object_data_data_window_overlook(rental_object_id, od.window_overlook)
+				db.set_ro_object_data_window_frame_type(rental_object_id, od.window_frame_type)
+				db.set_ro_object_data_cooking_range_type(rental_object_id, od.cooking_range_type)
+
+
+			elif request.form['source'] == 'building_tab':
+				b = Building(rental_object_id, request.form['building_type'], request.form['win_number'], 
+									request.form['garbage_disposal'], request.form['intercom'], request.form['concierge'],
+					  		        request.form['building_year'], None)
+				b.elevator = {'passenger': request.form['passenger_elevator'], 
+							  'freight': request.form['freight_elevator']}
+
+				db.set_ro_building(b.rental_object_id, b.building_type, b.floors_number, 
+								   b.garbage_disposal, b.intercom, b.concierge, b.building_year)
+				db.set_ro_building_elevator(rental_object_id, b.elevator)
+				return redirect(url_for('edit_rental_object', rental_object_id=rental_object_id))
+
+			elif request.form['source'] == 'location_tab':
+				db.set_ro_location_data(rental_object_id, request.form['country'], 
+											   request.form['federal_district'], 
+											   request.form['region'],
+											   request.form['city'],
+											   request.form['city_district'],
+											   request.form['street'],
+											   request.form['building_number'],
+											   request.form['block_number'],
+											   request.form['appt'],
+											   request.form['entrance_number'],
+											   request.form['floor'],
+											   request.form['coords'],
+											   request.form['nearest_metro_stations'],
+											   request.form['location_comment']
+											   )
+
+
+			elif request.form['source'] == 'appliances_tab':
+				db.set_ro_appliances_data(rental_object_id,
+										  request.form['fridge'],
+										  request.form['dishwasher'],
+										  request.form['washer'],
+										  request.form['television'],
+										  request.form['vacuum'],
+										  request.form['teapot'],
+										  request.form['iron'],
+										  request.form['microwave'])
+
+			elif request.form['source'] == 'special_tab':
+				rental_object_type = db.get_rental_object_type_by_id(rental_object_id)
+				if rental_object_type == 'комната':
+					db.set_ro_room_data(rental_object_id, request.form['total_area'], request.form['rooms_number'])
+
+				elif rental_object_type == 'квартира':
+					...
+
+				elif rental_object_type == 'дом':
+					...
+					
+
+			elif request.form['source'] == 'things_tab':
+				# загружаем список id вещей, предварительно преобразовав в список python из json
+				things_id_list = json.loads(request.form['things_id_list'])
+
+				if things_id_list == ['all']:
+					db.del_all_things_by_rental_object_id(rental_object_id)
+				else:
+					things_list = []
+					for id_ in things_id_list:
+						things_list.append([int(request.form[f'number_{id_}']),
+										    request.form[f'name_{id_}'],
+											int(request.form[f'amount_{id_}']),
+											float(request.form[f'cost_{id_}'])])
+					db.set_ro_things(rental_object_id, things_list)
+
+			elif request.form['source'] == 'costs_tab':
+				# загружаем список id расходов, предварительно преобразовав в список python из json
+				# список всех id
+				all_costs_id = json.loads(request.form['all_costs_id'])
+
+				# список добавленных id 
+				added_costs_id = json.loads(request.form['added_costs_id'])
+				
+				# список существующих id
+				db_costs_id = json.loads(request.form['db_costs_id'])
+
+				# список удаляемых из БД id (1 значение)
+				del_cost_id = json.loads(request.form['del_cost_id'])
+
+				print('список всех id: ', all_costs_id)
+				print('список добавленных id: ', added_costs_id)
+				print('список существующих id: ',db_costs_id)
+				print('удаленный id: ', bool(del_cost_id))
+
+				# если есть элемент для удаления				
+				if del_cost_id:
+					db.del_cost(del_cost_id)
+				else:
+					# обновляем данные для существующих записей
+					for id_ in db_costs_id:
+						db.update_ro_costs(id_, request.form[f'name_{id_}'], request.form[f'is_payer_landlord_{id_}'])
+
+					# создаем новые записи
+					for id_ in added_costs_id:
+						db.insert_ro_costs(rental_object_id, request.form[f'name_{id_}'], request.form[f'is_payer_landlord_{id_}'])
+			
+			return redirect(url_for('edit_rental_object', rental_object_id=rental_object_id))
+
+
+
+		else:
+			# создадим экземпляр класса Roon, Flat или House
+			rental_object_type = db.get_rental_object_type_by_id(rental_object_id)
+
+			if rental_object_type == 'комната':
+				rental_object = Room(*db.get_rental_object_data_room(rental_object_id))
+			elif rental_object_type == 'квартира':
+				rental_object = Flat(*db.get_rental_object_data_flat(rental_object_id))
+			elif rental_object_type == 'дом':
+				rental_object = House(*db.get_rental_object_data_house(rental_object_id))
+
+			rental_object.general = General(*db.get_general_data(rental_object_id))
+
+			rental_object.object_data = ObjectData(*db.get_object_data(rental_object_id))
+			bathroom_types = json.dumps(db.get_bathroom_types())
+			wash_place_types = json.dumps(db.get_wash_place_types())
+
+			rental_object.building = Building(*db.get_building_data(rental_object_id))
+			building_types = json.dumps(db.get_building_types())
+
+			rental_object.location = Location(*db.get_location_data(rental_object_id))
+
+			rental_object.appliances = Appliances(*db.get_appliances_data(rental_object_id))
+
+			rental_object.things = []
+			for thing_data in db.get_ro_things_data(rental_object_id):
+				rental_object.things.append(Thing(*thing_data))
+
+			# список айдишников вещей json-формат
+			things_id_list = json.dumps([i.id for i in rental_object.things])
+
+			rental_object.costs = []
+			for cost_data in db.get_costs_data(rental_object_id):
+				rental_object.costs.append(Cost(*cost_data))
+			
+			# список айдишников расходов json-формат
+			costs_id = json.dumps([i.id for i in rental_object.costs])
+
+
+			test = costs_id
+
+			return render_template('edit_rental_object.html', test=test, the_title=the_title, user_name=session['user_name'],
+			 rental_object=rental_object, bathroom_types=bathroom_types, wash_place_types=wash_place_types, building_types=building_types,
+			 things_id_list=things_id_list, costs_id=costs_id)
+
+	else:
+		abort(401)
+
+
+# __________Главная: наймодатель -> договоры _________
+@application.route('/landlord/rental_agreements', methods=['POST','GET']) 
+@logged_in_landlord
+def landlord_rental_agreements() -> 'html':
+	the_title = 'Договоры'
+
+	# получаем данные договоров аренды для данного наймодателя 
+	rental_agreements = [] 
+
+	# get_rental_agreement_data_of_landlord: [[id, agreement_number, status],...] 
+	for data in db.get_rental_agreement_data_of_landlord(session['landlord_id']):
+		ra = RentalAgreement(*data)
+
+		rental_object_data = db.get_rental_object_data_by_rental_agreement_id(ra.id)
+		# если в таблице ra_id_rental_object_id есть запись c ra.id
+		if rental_object_data:
+			ra.rental_object = RentalObject(*rental_object_data[0])
+		else:
+			ra.rental_object = RentalObject('-', '-', '-')
+
+		tenant_data = db.get_tenant_data_by_rental_agreement_id(ra.id)
+		# если в таблице ra_id_tenant_id есть запись c ra.id
+		if tenant_data:
+			ra.tenant = Tenant(*tenant_data[0])
+		else:
+			ra.tenant = Tenant('-', '-', '-', '-', '-')
+
+		agent_data = db.get_agent_data_by_rental_agreement_id(ra.id)
+		# если в таблице ra_id_agent_id есть запись c ra.id
+		if agent_data:
+			ra.agent = Agent(*agent_data[0])
+		else:
+			ra.agent = Agent('-', '-', '-', '-', '-')			
+
+		rental_agreements.append(ra)
+
+
+
+	return render_template('landlord_rental_agreements.html', the_title=the_title, user_name=session['user_name'], rental_agreements=rental_agreements,
+															  landlord_id=session['landlord_id'])
+
+
+@application.route('/add_rental_agreement', methods=['POST','GET']) 
+@logged_in_landlord
+def add_rental_agreement() -> 'html':
+	"""Добавление договора аренды"""
+	last_renatal_agreement_number = db.get_last_agreement_number()
+	if last_renatal_agreement_number:
+		renatal_agreement_number = int(last_renatal_agreement_number)+1
+	else:
+		renatal_agreement_number = 142857
+
+	db.create_rental_agreement(renatal_agreement_number, 'черновик', request.form['landlord_id'])
+
+	# обновляем данные в session
+	session['rental_agreements'] = db.get_rental_agreement_id_of_landlord(session['landlord_id']) 
+
+	return redirect(url_for('landlord_rental_agreements'))
+
+
+
+
+
+@application.route('/delete_rental_agreement', methods=['POST','GET']) 
+@logged_in_landlord
+def delete_rental_agreement() -> 'html':
+	db.delete_rental_agreement(request.form['rental_agreement_id'])
+	# обновляем данные в session
+	session['rental_agreements'] = db.get_rental_agreement_id_of_landlord(session['landlord_id']) 
+	return redirect(url_for('landlord_rental_agreements'))
+
+
+
+
+# __________Главная: наймодатель -> договоры -> договор _________
+@application.route('/edit_rental_agreement/<int:rental_agreement_id>', methods=['POST','GET']) 
+@logged_in_landlord
+def edit_rental_agreement(rental_agreement_id) -> 'html':
+	the_title = 'Договор'
+	if rental_agreement_id in session['rental_agreements']:
+		the_title = 'Договор'
+		if request.method == 'POST':
+			if request.form['source'] == 'info_tab':
+				...
+			if request.form['source'] == 'conditions_tab':
+				...
+
+			...
+		else:
+			rental_agreement_data = db.get_rental_agreement_data(rental_agreement_id)
+			rental_agreement = RentalAgreement(*rental_agreement_data)
+
+			# ОБЪЕКТ АРЕНДЫ
+			ra_rental_object = db.get_ra_rental_object_data(rental_agreement_id)
+
+			# создаем экземпляр класса Room, Flat или House внутри экземпляра класса RentalAgreement
+			# заполняем недостающие значения атрибутов заглушками (None)
+			rental_object_type = ra_rental_object[1]
+			if rental_object_type == 'комната':
+				rental_agreement.rental_object = Room(ra_rental_object[0], rental_object_type, None, None, None)
+			elif rental_object_type == 'квартира':
+				rental_agreement.rental_object = Flat(ra_rental_object[0], rental_object_type, None, None, None)
+			elif rental_object_type == 'дом':
+				rental_agreement.rental_object = House(ra_rental_object[0], rental_object_type, None, None, None)
+
+			# создаем экземпляр класса Location внутри созданного экземпляра Room, Flat или House
+			rental_agreement.rental_object.location = Location(*[None for i in range(0, 15)])
+			rental_agreement.rental_object.location.address = ra_rental_object[2]
+
+			# создаем экземпляр класса General внутри созданного экземпляра Room, Flat или House
+			# передаем значение последнего атрибута (title_deed)
+			rental_agreement.rental_object.general = General(None, None, ra_rental_object[3])
+
+			# НАЙМОДАТЕЛЬ
+			# получаем данные наймодателя зафиксированные в договоре
+			ra_lanlord = db.get_ra_landlord_data(rental_agreement_id)
+
+			# создаем экземпляр класса Landlord(user_id, name, phone, email, landlord_id, inn) внутри RentalAgreement
+			rental_agreement.landlord = Landlord(None, None, ra_lanlord[4], ra_lanlord[5], ra_lanlord[0], None)
+			# создаем экземпляр класса Passport внутри Landlord
+			# Passport(user_id, first_name, patronymic, last_name, serie, pass_number, authority, 
+			# department_code, date_of_issue, date_of_birth, place_of_birth, registration)
+			rental_agreement.landlord.passport = Passport(None, ra_lanlord[2], ra_lanlord[3], ra_lanlord[1], ra_lanlord[6], ra_lanlord[7],
+													ra_lanlord[8], None, None, None, None, ra_lanlord[9])
+
+
+			# НАНИМАТЕЛЬ
+			# получаем данные нанимателя зафиксированные в договоре
+			ra_tenant = db.get_ra_tenant_data(rental_agreement_id)
+			# создаем экземпляр класса Landlord(user_id, name, phone, email, landlord_id, inn) внутри RentalAgreement
+			rental_agreement.tenant = Tenant(None, None, ra_tenant[4], ra_tenant[5], ra_tenant[0], None)
+			# создаем экземпляр класса Passport внутри Landlord
+			# Passport(user_id, first_name, patronymic, last_name, serie, pass_number, authority, 
+			# department_code, date_of_issue, date_of_birth, place_of_birth, registration)
+			rental_agreement.tenant.passport = Passport(None, ra_tenant[2], ra_tenant[3], ra_tenant[1], ra_tenant[6], ra_tenant[7],
+													ra_tenant[8], None, None, None, None, ra_tenant[9])
+
+
+			# АГЕНТ
+			# получаем данные нанимателя зафиксированные в договоре
+			ra_agent = db.get_ra_agent_data(rental_agreement_id)
+			# создаем экземпляр класса Landlord(user_id, name, phone, email, landlord_id, inn) внутри RentalAgreement
+			rental_agreement.agent = Agent(None, None, ra_agent[4], ra_agent[5], ra_agent[0], None)
+			# создаем экземпляр класса Passport внутри Landlord
+			# Passport(user_id, first_name, patronymic, last_name, serie, pass_number, authority, 
+			# department_code, date_of_issue, date_of_birth, place_of_birth, registration)
+			rental_agreement.agent.passport = Passport(None, ra_agent[2], ra_agent[3], ra_agent[1], ra_agent[6], ra_agent[7],
+													ra_agent[8], None, None, None, None, ra_agent[9])
+
+
+			# УСЛОВИЯ ДОГОВОРА
+			# создаем экземпляр класса Conditions внутри RentalAgreement
+			rental_agreement.conditions = Conditions(*db.get_ra_conditions_data(rental_agreement_id))
+
+			# АКТ СДАЧИ-ПРИЕМКИ
+			rental_agreement.move_in = MoveIn(*db.get_ra_move_in_data(rental_agreement_id))
+
+			# АКТ ВОЗВРАТА		
+			rental_agreement.move_out = MoveOut(*db.get_ra_move_out_data(rental_agreement_id))
+
+			# ДОСРОЧНОЕ РАСТОРЖЕНИЕ		
+			rental_agreement.termination = Termination(*db.get_ra_termination(rental_agreement_id))
+			if not rental_agreement.termination.end_of_term:
+				rental_agreement.termination.end_of_term = 'Договор не расторгался'
+
+
+
+			# ДОСРОЧНОЕ ПРОДЛЕНИЕ				
+			rental_agreement.renewal = Renewal(rental_agreement_id, db.get_ra_renewal(rental_agreement_id))
+
+
+
+
+			test = rental_agreement.renewal.last_end_of_term
+	else:
+		abort(401)
+	return render_template('edit_rental_agreement.html', the_title=the_title, user_name=session['user_name'], rental_agreement=rental_agreement, test=test)
 
 
 
@@ -351,7 +987,13 @@ def landlord_tenants() -> 'html':
 
 
 
-
+# удаление пользователя объекта недвижимости
+@application.route('/delete_rental_object', methods=['POST','GET']) 
+@logged_in_landlord
+def delete_rental_object() -> 'html':
+	db.delete_rental_object(request.form['rental_object_id'])
+	session['rental_objects'] = db.get_rental_object_id_of_landlord(session['landlord_id'])
+	return redirect(url_for('landlord_rental_objects'))
 
 
 # __________ГЛАВНАЯ: НАНИМАТЕЛЬ_________
@@ -373,6 +1015,28 @@ def index_agent() -> 'html':
 	return render_template('index_agent.html', the_title=the_title, user_name=user_name)
 
 
+# удаление пользователя
+@application.route('/delete_user', methods=['POST','GET'])
+@logged_in
+def delete_user() -> 'html':
+	user_id = request.form['user_id']
+	user_type = request.form['user_type']
+
+	db.delete_user(user_id)
+	if user_type == 'администратор':
+		...
+	elif user_type == 'наймодатель':
+		# обновляем список user_id наймодателей, данного администратора 
+		session['landlords'] = db.get_landlord_user_id_of_admin(session['admin_id']) 
+		# редирект на список всех наймодателей данного администратора
+		return redirect(url_for('admin_landlords'))
+	elif user_type == 'наниматель':
+		# обновляем список user_id нанимателей, данного наймодателя 
+		session['tenants'] = db.get_tenant_user_id_of_landlord(session['landlord_id']) 
+		# редирект на список всех нанимателей данного наймодателя
+		return redirect(url_for('landlord_tenants'))
+	elif user_type == 'агент':
+		...
 
 
 
@@ -395,13 +1059,21 @@ def page_not_found(error):
 
 if __name__ == '__main__':
 	application.run(debug=True) # запуск локально
+	# db.create_rental_object('комната', 1)
+
+	# # 
+	# print(db.get_rental_object_data(2))
+	# print(db.get_general_data(2))
+	# print(db.get_object_data(2))
+	# print(db.get_building_data(2))
+	# print(db.get_location_data(2))
+	# print(db.get_appliance_data(2))
 
 
 
 
 
 	# ПЕРЕЗАГРУЗКА ТАБЛИЦ И ТЕСТОВЫХ ДАННЫХ
-	# print(db.is_login('admin'))
 	# db_def.reload_all_tables()
 	# db.add_default_data()
 	# db.add_test_data()

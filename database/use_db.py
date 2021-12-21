@@ -87,11 +87,12 @@ class UserDD:
 																			   FOREIGN KEY(landlord_id)
 																 					REFERENCES users_landlords(id)
 																 					ON DELETE CASCADE
+																 				UNIQUE(admin_id, landlord_id)
 																	 		   ) ENGINE = InnoDB""" )
 
 
 
-			# LINK LANDLORDS WITH AGENTS AND TENANTS
+			# LINK LANDLORDS WITH TENANTS
 			cursor.execute("""CREATE TABLE IF NOT EXISTS users_landlord_id_tenant_id(id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
 																 			   landlord_id INT NOT NULL,
 																 			   tenant_id INT NOT NULL,
@@ -101,8 +102,9 @@ class UserDD:
 																			   FOREIGN KEY(tenant_id)
 																 					REFERENCES users_tenants(id)
 																 					ON DELETE CASCADE
+																 			   UNIQUE(landlord_id, tenant_id)
 																	 		   ) ENGINE = InnoDB""" )
-
+			# LINK LANDLORDS WITH AGENTS
 			cursor.execute("""CREATE TABLE IF NOT EXISTS users_landlord_id_agent_id(id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
 																 			   landlord_id INT NOT NULL,
 																 			   agent_id INT NOT NULL,
@@ -112,10 +114,21 @@ class UserDD:
 																			   FOREIGN KEY(agent_id)
 																 					REFERENCES users_agents(id)
 																 					ON DELETE CASCADE
+																 			   UNIQUE(landlord_id, agent_id)
 																	 		   ) ENGINE = InnoDB""" )
 
-
-
+			# LINK LANDLORDS WITH RENTAL AGREEMENTS
+			cursor.execute("""CREATE TABLE IF NOT EXISTS users_landlord_id_rental_agreements_id(id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+																 			   landlord_id INT NOT NULL,
+																 			   rental_agreement_id INT NOT NULL,
+																			   FOREIGN KEY(landlord_id)
+																 					REFERENCES users_landlords(id)
+																 					ON DELETE CASCADE,
+																			   FOREIGN KEY(rental_agreement_id)
+																 					REFERENCES rental_agreements(id)
+																 					ON DELETE CASCADE
+																 			   UNIQUE(landlord_id, rental_agreement_id)	
+																	 		   ) ENGINE = InnoDB""" )
 
 
 
@@ -171,29 +184,27 @@ class RentalObjectDD:
 			# rental_objects - объекты аренды
 			cursor.execute("""CREATE TABLE IF NOT EXISTS rental_objects (id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
 																		 type_id INT NOT NULL,
-																		 landlord_id INT NOT NULL,
-																		 tenant_id INT, 
-																		 agent_id INT, 
-																		 rental_agreement_id INT,
-																		 FOREIGN KEY (type_id)
-																			REFERENCES rental_object_types(id),
-																		 FOREIGN KEY (landlord_id)
-																			REFERENCES users_landlords(id),
-																		 FOREIGN KEY (tenant_id)
-																			REFERENCES users_tenants(id),
-																		 FOREIGN KEY (agent_id)
-																			REFERENCES users_agents(id)
+																		 name VARCHAR(100)
 																		) ENGINE = InnoDB""" )
 			print('CREATE TABLE IF NOT EXISTS `rental_objects`')
 
-
+			# LINK LANDLORDS WITH RENTAL OBJECTS
+			cursor.execute("""CREATE TABLE IF NOT EXISTS users_landlord_id_rental_object_id(id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+																 			   landlord_id INT NOT NULL,
+																 			   rental_object_id INT NOT NULL,
+																			   FOREIGN KEY(landlord_id)
+																 					REFERENCES users_landlords(id)
+																 					ON DELETE CASCADE,
+																			   FOREIGN KEY(rental_object_id)
+																 					REFERENCES rental_objects(id)
+																 					ON DELETE CASCADE
+																	 		   ) ENGINE = InnoDB""" )
 
 
 			# ro_general
 			cursor.execute("""CREATE TABLE IF NOT EXISTS ro_general (rental_object_id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
-																	 name VARCHAR(100),
-																	 cadastral_number VARCHAR(100),
-																	 title_deed VARCHAR(255),
+																	 cadastral_number VARCHAR(100) DEFAULT '',
+																	 title_deed VARCHAR(255) DEFAULT '',
 																	 FOREIGN KEY(rental_object_id)
 																		REFERENCES rental_objects(id)
 																		ON DELETE CASCADE																	 
@@ -322,12 +333,12 @@ class RentalObjectDD:
 
 			# ro_object_data - общие данные об объекте
 			cursor.execute("""CREATE TABLE IF NOT EXISTS ro_object_data (rental_object_id INT PRIMARY KEY NOT NULL,
-																	 bathroom_type_id INT,
-																	 wash_place_type_id INT,
+																	 bathroom_type_id INT DEFAULT 1,
+																	 wash_place_type_id INT DEFAULT 1,
 																	 area FLOAT, 
 																	 ceilings_height FLOAT,
 																	 win_number INT,
-																	 balcony INT DEFAULT 0,
+																	 balcony BOOL DEFAULT 0,
 																	 air_conditioner BOOL DEFAULT 0,
 																	 wi_fi BOOL DEFAULT 0,
 																	 furniture BOOL DEFAULT 0,
@@ -380,7 +391,7 @@ class RentalObjectDD:
 
 			# ro_building - данные о доме
 			cursor.execute("""CREATE TABLE IF NOT EXISTS ro_building (rental_object_id INT PRIMARY KEY NOT NULL,
-																	  building_type_id INT,
+																	  building_type_id INT DEFAULT 1,
 																	  floors_number INT,
 																	  garbage_disposal BOOL DEFAULT 0,
 																	  intercom BOOL DEFAULT 0,
@@ -412,18 +423,21 @@ class RentalObjectDD:
 
 			# ro_location
 			cursor.execute("""CREATE TABLE IF NOT EXISTS ro_location (rental_object_id INT PRIMARY KEY NOT NULL,
-																	  coords VARCHAR(100),
-																	  country VARCHAR(100),
-																	  region VARCHAR(100),
-																	  city VARCHAR(100),
-																	  district VARCHAR(100),
-																	  street VARCHAR(100),
-																	  building_number VARCHAR(100),
-																	  block_number VARCHAR(100),
-																	  appt VARCHAR(100),
-																	  entrance_number VARCHAR(100),
-																	  floor INT,
-																	  location_comment VARCHAR(255),
+																	  country VARCHAR(100) DEFAULT 'РФ',
+																	  federal_district VARCHAR(100) DEFAULT '',
+																	  region VARCHAR(100) DEFAULT '',
+																	  city VARCHAR(100) DEFAULT '',
+																	  city_district VARCHAR(100) DEFAULT '',
+																	  street VARCHAR(100) DEFAULT '',
+																	  building_number VARCHAR(100) DEFAULT '',
+																	  block_number VARCHAR(100) DEFAULT '',
+																	  appt VARCHAR(100) DEFAULT '',
+																	  entrance_number VARCHAR(100) DEFAULT '',
+																	  floor VARCHAR(100) DEFAULT '',
+																	  coords VARCHAR(100) DEFAULT '',
+																	  nearest_metro_stations VARCHAR(255) DEFAULT '', 
+																	  location_comment VARCHAR(255) DEFAULT '',
+
 																	  FOREIGN KEY(rental_object_id)
 																		REFERENCES rental_objects(id)
 																		ON DELETE CASCADE
@@ -465,6 +479,17 @@ class RentalObjectDD:
 
 			print('CREATE TABLE IF NOT EXISTS `ro_things`')
 
+			# ro_things
+			cursor.execute("""CREATE TABLE IF NOT EXISTS ro_costs (	id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+																	rental_object_id INT,
+																	name VARCHAR(255) DEFAULT '',
+																	is_payer_landlord BOOL DEFAULT 0,
+															  		FOREIGN KEY(rental_object_id)
+																		REFERENCES rental_objects(id)
+																		ON DELETE CASCADE
+															 		) ENGINE = InnoDB""" )
+
+			print('CREATE TABLE IF NOT EXISTS `ro_things`')
 
 
 			# ro_room
@@ -508,33 +533,209 @@ class RentalAgreementDD:
 	def create_all_rental_agreement_tables(self):
 		with self.context_manager(self.config) as cursor:
 
+			# RENTAL AGREEMENT STATUSES
+			cursor.execute("""CREATE TABLE IF NOT EXISTS ra_statuses (id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+																    status VARCHAR(50) UNIQUE
+																	) ENGINE = InnoDB""" )	
+
+
 			# rental_agreements - договоры аренды
 			cursor.execute("""CREATE TABLE IF NOT EXISTS rental_agreements (id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
-																		   agreement_number VARCHAR(50) DEFAULT '',
-																		   agent_id INT,
-																		   landlord_id INT,
-																		   tenant_id INT,
-																		   rental_object_id INT
+																		   agreement_number VARCHAR(50),
+																		   status VARCHAR(50),
+																		   FOREIGN KEY(status)
+																		       REFERENCES ra_status(status),
+																		   UNIQUE(agreement_number)
 															 	  		   ) ENGINE = InnoDB""" )
 			print('CREATE TABLE IF NOT EXISTS `rental_agreements`')
 
 
-			# ra_general_conditions - условия аренды
-			cursor.execute("""CREATE TABLE IF NOT EXISTS ra_general_conditions (rental_agreement_id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+
+			# LINK RENTAL AGREEMENTS WITH TENANTS
+			cursor.execute("""CREATE TABLE IF NOT EXISTS ra_id_tenant_id (id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+																 		  				rental_agreement_id INT NOT NULL,
+																 	     			    tenant_id INT NOT NULL,
+																				        FOREIGN KEY(rental_agreement_id)
+																		 			      REFERENCES rental_agreements(id)
+																		 				  ON DELETE CASCADE,
+																					     FOREIGN KEY(tenant_id)
+																		 					REFERENCES users_tenants(id)
+																		 					ON DELETE CASCADE
+																		 				UNIQUE(rental_agreement_id, tenant_id)
+																	 		   			 ) ENGINE = InnoDB""" )		
+
+			# LINK RENTAL AGREEMENTS WITH AGENTS
+			cursor.execute("""CREATE TABLE IF NOT EXISTS ra_id_agent_id (id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+																 		  				rental_agreement_id INT NOT NULL,
+																 	     			    agent_id INT NOT NULL,
+																				        FOREIGN KEY(rental_agreement_id)
+																		 			      REFERENCES rental_agreements(id)
+																		 				  ON DELETE CASCADE,
+																					     FOREIGN KEY(agent_id)
+																		 					REFERENCES users_agents(id)
+																		 					ON DELETE CASCADE
+																		 				UNIQUE(rental_agreement_id, agent_id)
+																	 		   			 ) ENGINE = InnoDB""" )
+
+			# LINK RENTAL AGREEMENTS WITH RENTAL OBJECTS
+			cursor.execute("""CREATE TABLE IF NOT EXISTS ra_id_rental_object_id (id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+																 		  				rental_agreement_id INT NOT NULL,
+																 	     			    rental_object_id INT NOT NULL,
+																				        FOREIGN KEY(rental_agreement_id)
+																		 			      REFERENCES rental_agreements(id)
+																		 				  ON DELETE CASCADE,
+																					     FOREIGN KEY(rental_object_id)
+																		 					REFERENCES rental_objects(id)
+																		 					ON DELETE CASCADE
+																		 				 UNIQUE(rental_agreement_id, rental_object_id)
+																	 		   			 ) ENGINE = InnoDB""" )
+
+
+
+
+			# ra_conditions - условия аренды
+			cursor.execute("""CREATE TABLE IF NOT EXISTS ra_conditions (rental_agreement_id INT PRIMARY KEY NOT NULL,
 																	 rental_rate INT DEFAULT 0,
 																	 prepayment INT DEFAULT 0,
 																	 deposit INT DEFAULT 0,
 																	 late_fee FLOAT DEFAULT 3,
-																	 start_of_term DATE DEFAULT '0000-00-00',
-																	 end_of_term DATE DEFAULT '0000-00-00',
+																	 start_of_term DATE DEFAULT '2000-01-01',
+																	 end_of_term DATE DEFAULT '2000-01-01',
 																	 payment_day INT DEFAULT 0,
+																	 cleaning_cost INT DEFAULT 0,
 															  		 FOREIGN KEY (rental_agreement_id )
 																		REFERENCES rental_agreements(id)
 																		ON DELETE CASCADE
 															 	  	  ) ENGINE = InnoDB""" )
-			print('CREATE TABLE IF NOT EXISTS `ra_general_conditions`')
+			print('CREATE TABLE IF NOT EXISTS `ra_conditions`')
 
 			
+
+			# ra_move_in - Акт сдачи-приемки (один для каждого договора)
+			сursor.execute("""CREATE TABLE IF NOT EXISTS ra_move_in (rental_agreement_id INT PRIMARY KEY NOT NULL,
+																	 number_of_sets_of_keys INT DEFAULT 0, 
+																	 number_of_keys_in_set INT DEFAULT 0,
+																	 rental_object_comment VARCHAR(1000) DEFAULT '',
+																	 things_comment VARCHAR(1000) DEFAULT '',
+															  		 FOREIGN KEY (rental_agreement_id )
+																		REFERENCES rental_agreements(id)
+																		ON DELETE CASCADE,
+																	 UNIQUE(rental_agreement_id)
+ 																	 ) ENGINE = InnoDB""" )
+		
+
+
+			# ra_move_out - Акт возврата (один для каждого договора)
+			сursor.execute("""CREATE TABLE IF NOT EXISTS ra_move_out (rental_agreement_id INT PRIMARY KEY NOT NULL,
+																	 number_of_sets_of_keys INT DEFAULT 0, 
+																	 number_of_keys_in_set INT DEFAULT 0,
+																	 rental_object_comment VARCHAR(1000) DEFAULT '',
+																	 things_comment VARCHAR(1000) DEFAULT '',
+																	 damage_cost FLOAT DEFAULT 0.0,
+																	 cleaning BOOL DEFAULT 0, 
+																	 rental_agreeement_debts FLOAT DEFAULT 0.0,
+																	 deposit_refund FLOAT DEFAULT 0.0,
+																	 prepayment_refund FLOAT DEFAULT 0.0,
+															  		 FOREIGN KEY (rental_agreement_id )
+																		REFERENCES rental_agreements(id)
+																		ON DELETE CASCADE,
+																	 UNIQUE(rental_agreement_id)
+ 																	 ) ENGINE = InnoDB""" )
+
+			# ra_termination - Соглашение о досрочном расторжении (только одно для каждого договора)
+			сursor.execute("""CREATE TABLE IF NOT EXISTS ra_termination (rental_agreement_id INT PRIMARY KEY NOT NULL,
+																	 	 end_of_term DATE, 
+															  		 	 FOREIGN KEY (rental_agreement_id )
+																			 REFERENCES rental_agreements(id)
+																			 ON DELETE CASCADE,
+																		 UNIQUE(rental_agreement_id)
+ 																	 	) ENGINE = InnoDB""" )			
+
+			# ra_renewal - Соглашение о продлении (может выполняться неограниченное число раз, даты не могут повторятся)
+			сursor.execute("""CREATE TABLE IF NOT EXISTS ra_renewal (id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+																		 rental_agreement_id INT NOT NULL,
+																	 	 end_of_term DATE, 
+															  		 	 FOREIGN KEY (rental_agreement_id )
+																			 REFERENCES rental_agreements(id)
+																			 ON DELETE CASCADE,
+																		 UNIQUE(end_of_term)
+ 																	 	) ENGINE = InnoDB""" )	
+			
+
+
+
+
+			# ra_rental_object - фиксированные данные объекта аренды
+			сursor.execute("""CREATE TABLE IF NOT EXISTS ra_rental_object (rental_agreement_id INT PRIMARY KEY NOT NULL,
+																		 rental_object_id INT NOT NULL,
+																		 type VARCHAR(255),
+																	 	 address VARCHAR(255),
+																	 	 title_deed VARCHAR(255),
+															  		 	 FOREIGN KEY (rental_agreement_id )
+																			 REFERENCES rental_agreements(id)
+																			 ON DELETE CASCADE
+ 																	 	) ENGINE = InnoDB""" )	
+
+			# ra_things - фиксированные данные о вещах в объекте аренды (опись имущества) 
+			cursor.execute("""CREATE TABLE IF NOT EXISTS ra_things (	id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+																		rental_agreement_id INT,
+																		thing_number INT,
+																		thing_name VARCHAR(255), 
+																		amount INT,
+																		cost FLOAT,
+															  		 	FOREIGN KEY (rental_agreement_id )
+																			REFERENCES rental_agreements(id)
+																			ON DELETE CASCADE
+															 			) ENGINE = InnoDB""" )
+			# ra_landlord - фиксированные данные наймодателя в договоре
+			сursor.execute("""CREATE TABLE IF NOT EXISTS ra_landlord (rental_agreement_id INT PRIMARY KEY NOT NULL,
+																	  landlord_id INT,
+																	  last_name VARCHAR(255) DEFAULT '',
+																	  first_name VARCHAR(255) DEFAULT '',
+																	  patronymic VARCHAR(255) DEFAULT '',
+																	  phone VARCHAR(255) DEFAULT '',
+																	  email VARCHAR(255) DEFAULT '',
+																	  serie VARCHAR(255) DEFAULT '', # серия паспорта
+																	  pass_number VARCHAR(255) DEFAULT '', # номер паспорта
+																	  authority VARCHAR(255) DEFAULT '', # орган выдавший паспорт
+																	  registration VARCHAR(255) DEFAULT '', # прописка
+															  		  FOREIGN KEY (rental_agreement_id )
+																			REFERENCES rental_agreements(id)
+																			ON DELETE CASCADE
+															 			) ENGINE = InnoDB""" )																				
+			# ra_tenant - фиксированные данные нанимателя в договоре
+			сursor.execute("""CREATE TABLE IF NOT EXISTS ra_tenant (rental_agreement_id INT PRIMARY KEY NOT NULL,
+																	  tenant_id INT,
+																	  last_name VARCHAR(255) DEFAULT '',
+																	  first_name VARCHAR(255) DEFAULT '',
+																	  patronymic VARCHAR(255) DEFAULT '',
+																	  phone VARCHAR(255) DEFAULT '',
+																	  email VARCHAR(255) DEFAULT '',
+																	  serie VARCHAR(255) DEFAULT '', # серия паспорта
+																	  pass_number VARCHAR(255) DEFAULT '', # номер паспорта
+																	  authority VARCHAR(255) DEFAULT '', # орган выдавший паспорт
+																	  registration VARCHAR(255) DEFAULT '', # прописка
+															  		  FOREIGN KEY (rental_agreement_id )
+																			REFERENCES rental_agreements(id)
+																			ON DELETE CASCADE
+															 			) ENGINE = InnoDB""" )	
+			# ra_agent - фиксированные данные агента в договоре
+			сursor.execute("""CREATE TABLE IF NOT EXISTS ra_agent (rental_agreement_id INT PRIMARY KEY NOT NULL,
+																	  agent_id INT,
+																	  last_name VARCHAR(255) DEFAULT '',
+																	  first_name VARCHAR(255) DEFAULT '',
+																	  patronymic VARCHAR(255) DEFAULT '',
+																	  phone VARCHAR(255) DEFAULT '',
+																	  email VARCHAR(255) DEFAULT '',
+																	  serie VARCHAR(255) DEFAULT '', # серия паспорта
+																	  pass_number VARCHAR(255) DEFAULT '', # номер паспорта
+																	  authority VARCHAR(255) DEFAULT '', # орган выдавший паспорт
+																	  registration VARCHAR(255) DEFAULT '', # прописка
+															  		  FOREIGN KEY (rental_agreement_id )
+																			REFERENCES rental_agreements(id)
+																			ON DELETE CASCADE
+															 			) ENGINE = InnoDB""" )
+
 
 
 
@@ -590,7 +791,40 @@ class UserDM:
 		with self.context_manager(self.config) as cursor:
 			cursor.execute("""INSERT INTO user_types(type) VALUES (%s)""", (type_,))
 
+	# ------------------------ ПЕРЕВОД ADMIN_ID, LANDLORD_ID ИЛИ TENANT_ID В USER_ID ------------------------
+
+	def get_user_id_by_admin_id(self, admin_id):
+		"""Возвращает user_id по admin_id"""
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT user_id FROM users_admins WHERE id=%s""", (admin_id,))
+			return cursor.fetchall()[0][0]	
+
+	def get_user_id_by_landlord_id(self, landlord_id):
+		"""Возвращает user_id по landlord_id"""
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT user_id FROM users_landlords WHERE id=%s""", (landlord_id,))
+			return cursor.fetchall()[0][0]	
+
+
+	def get_user_id_by_tenant_id(self, tenant_id):
+		"""Возвращает user_id по tenant_id"""
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT user_id FROM users_tenants WHERE id=%s""", (tenant_id,))
+			return cursor.fetchall()[0][0]	
+
+
+	def get_user_id_by_agent_id(self, agent_id):
+		"""Возвращает user_id по agent_id"""
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT user_id FROM users_agents WHERE id=%s""", (agent_id,))
+			return cursor.fetchall()[0][0]	
+
+
 	# ------------------------ СОЗДАНИЕ ПОЛЬЗОВАТЕЛЕЙ (вспомогательные функции) ------------------------
+
+
+
+
 	def get_user_type_id_by_user_type(self, user_type):
 		"""id типа пользователя по наименованию типа"""
 		with self.context_manager(self.config) as cursor:
@@ -618,7 +852,7 @@ class UserDM:
 
 
 	# ------------------------ СОЗДАНИЕ ПОЛЬЗОВАТЕЛЕЙ ------------------------ 
-	def create_user(self, user_type, name, phone, email, login, hashed_password, admin_id=None):
+	def create_user(self, user_type, name, phone, email, login, hashed_password, admin_id=None, landlord_id=None):
 		# получаем id типа пользователя по наименованию типа
 		user_type_id = self.get_user_type_id_by_user_type(user_type)
 
@@ -643,9 +877,9 @@ class UserDM:
 		elif user_type == 'наймодатель':
 			self.add_landlord_data(user_id, admin_id)
 		elif user_type == 'наниматель':
-			self.add_tenant_data(user_id)
+			self.add_tenant_data(user_id, landlord_id)
 		elif user_type == 'агент':
-			self.add_agent_data(user_id)
+			self.add_agent_data(user_id, landlord_id)
 
 
 	def add_admin_data(self, user_id):
@@ -665,16 +899,28 @@ class UserDM:
 			cursor.execute("""INSERT INTO users_admin_id_lanlord_id(admin_id, landlord_id) 
 						   VALUES (%s, %s)""", (admin_id, landlord_id))
 
-	def add_tenant_data(self, user_id):
+	def add_tenant_data(self, user_id, landlord_id):
 		with self.context_manager(self.config) as cursor:
 			# создаем запись в таблице users_tenants привязанную к user_id	
 			cursor.execute("""INSERT INTO users_tenants(user_id) VALUES(%s)""", (user_id,))
+			# получаем id записи (tenant_id) (генерируется в БД)
+			cursor.execute("""SELECT MAX(id) FROM users_tenants""") 
+			tenant_id = cursor.fetchall()[0][0] 
+			# связываем landlord_id и tenant_id в таблице users_landlord_id_tenant_id
+			cursor.execute("""INSERT INTO users_landlord_id_tenant_id(landlord_id, tenant_id) 
+						   VALUES (%s, %s)""", (landlord_id, tenant_id))
 
-
-	def add_agent_data(self, user_id):
+	def add_agent_data(self, user_id, landlord_id):
 		with self.context_manager(self.config) as cursor:
 			# создаем запись в таблице users_agents привязанную к user_id	
 			cursor.execute("""INSERT INTO users_agents(user_id) VALUES(%s)""", (user_id,))
+			# получаем id записи (agent_id) (генерируется в БД)
+			cursor.execute("""SELECT MAX(id) FROM users_agents""") 
+			agent_id = cursor.fetchall()[0][0] 
+			# связываем landlord_id и tenant_id в таблице users_landlord_id_tenant_id
+			cursor.execute("""INSERT INTO users_landlord_id_agent_id(landlord_id, agent_id) 
+						   VALUES (%s, %s)""", (landlord_id, agent_id))
+
 
 
 	# ------------------------ УДАЛЕНИЕ ПОЛЬЗОВАТЕЛЕЙ ------------------------ 
@@ -725,20 +971,20 @@ class UserDM:
 
 
 
-	# FOR LADLORDS DATA OF ADMIN OUTPUT
+	# FOR LANDLORDS DATA OF ADMIN OUTPUT
 	def get_landlord_user_id_of_admin(self, admin_id):
-		"""возвращает список landlord_id наймодателей данного администратора"""
+		"""возвращает список user_id наймодателей данного администратора"""
 		with self.context_manager(self.config) as cursor:
 			cursor.execute("""SELECT ul.user_id
 							  FROM users_admin_id_lanlord_id AS uaili
 							  JOIN users_landlords AS ul
 							  ON  uaili.landlord_id=ul.id
-							  WHERE admin_id = %s""", (admin_id,))	
+							  WHERE uaili.admin_id = %s""", (admin_id,))	
 			return  [i[0] for i in cursor.fetchall()]
 
 
-	def get_landlord_general_data_of_admin(self, admin_id):
-		"""возвращает все данные наймодателей конткретного администатора"""
+	def get_landlord_data_of_admin(self, admin_id):
+		"""возвращает данные всех наймодателей конткретного администатора (класс Landlord)"""
 		with self.context_manager(self.config) as cursor:
 			cursor.execute("""SELECT u.id, u.name, u.phone, u.email, ul.id, ul.inn # u.type_id, ul.inn
 							  FROM users AS u
@@ -750,7 +996,7 @@ class UserDM:
 			return cursor.fetchall()
 
 	def get_landlord_data(self, user_id):
-		"""возвращает данные наймодателя, необходимые для создания экземпляра класса Landlord"""
+		"""возвращает данные любого наймодателя безотносительно к администратору (класс Landlord)"""
 		with self.context_manager(self.config) as cursor:
 			cursor.execute("""SELECT u.id, u.name, u.phone, u.email, ul.id, ul.inn # u.type_id, ul.inn
 							  FROM users AS u
@@ -759,7 +1005,105 @@ class UserDM:
 							  WHERE u.id=%s""", (user_id,))
 			return cursor.fetchall()[0]
 
+
+
 	# FOR TENANTS DATA OF LADLORD OUTPUT
+	def get_tenant_user_id_of_landlord(self, landlord_id):
+		"""возвращает список user_id нанимателей данного наймодателя"""
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT ut.user_id
+							  FROM users_landlord_id_tenant_id AS uliti
+							  JOIN users_tenants AS ut
+							  ON uliti.tenant_id=ut.id
+							  WHERE uliti.landlord_id = %s""", (landlord_id,))	
+			return  [i[0] for i in cursor.fetchall()]
+
+
+	def get_tenant_data_of_landlord(self, landlord_id):
+		"""возвращает данные всех нанимателей конткретного наймодателя (класс Tenant)"""
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT u.id, u.name, u.phone, u.email, ut.id
+							  FROM users AS u
+							  JOIN users_tenants AS ut
+							  ON u.id=ut.user_id
+							  JOIN	users_landlord_id_tenant_id AS uliti
+							  ON uliti.tenant_id=ut.id
+							  WHERE uliti.landlord_id=%s""", (landlord_id,))
+			return cursor.fetchall()
+
+	def get_tenant_data(self, user_id):
+		"""возвращает данные любого нанимателя безотносительно к наймодателю (класс Tenant)"""
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT u.id, u.name, u.phone, u.email, ut.id
+							  FROM users AS u
+							  JOIN users_tenants AS ut
+							  ON u.id=ut.user_id
+							  WHERE u.id=%s""", (user_id,))
+			return cursor.fetchall()[0]
+
+
+
+
+	# FOR AGENTS DATA OF LADLORD OUTPUT
+	def get_agent_user_id_of_landlord(self, landlord_id):
+		"""возвращает список user_id агентов данного наймодателя"""
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT ua.user_id
+							  FROM users_landlord_id_agent_id AS uliai
+							  JOIN users_agents AS ua
+							  ON uliai.agent_id=ua.id
+							  WHERE uliai.landlord_id = %s""", (landlord_id,))	
+			return  [i[0] for i in cursor.fetchall()]
+
+
+	def get_agent_data_of_landlord(self, landlord_id):
+		"""возвращает данные всех агентов конткретного наймодателя (класс Agent)"""
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT u.id, u.name, u.phone, u.email, ua.id
+							  FROM users AS u
+							  JOIN users_agents AS ua
+							  ON u.id=ua.user_id
+							  JOIN	users_landlord_id_agent_id AS uliai
+							  ON uliai.agent_id=ua.id
+							  WHERE uliai.landlord_id=%s""", (landlord_id,))
+			return cursor.fetchall()
+
+	def get_agent_data(self, user_id):
+		"""возвращает данные любого агента безотносительно к наймодателю (класс Landlord)"""
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT u.id, u.name, u.phone, u.email, ua.id
+							  FROM users AS u
+							  JOIN users_agents AS ua
+							  ON u.id=ua.user_id
+							  WHERE u.id=%s""", (user_id,))
+			return cursor.fetchall()[0]
+
+
+
+	# ПОЛУЧЕНИЕ ДАННЫХ ПОЛЬЗОВАТЛЕЙ ПО НОМЕРУ ДОГОВОРА		
+	def get_tenant_data_by_rental_agreement_id(self, rental_agreement_id):
+		"""возвращает данные user по rental_agreement_id, tables: [ra_id_tenant_id, users_tenants, users] """
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT u.id, u.name, u.phone, u.email, ut.id
+							  FROM ra_id_tenant_id AS riti
+							  JOIN users_tenants AS ut
+							  ON riti.tenant_id=ut.id
+							  JOIN users AS u
+							  ON u.id=ut.user_id
+							  WHERE riti.rental_agreement_id=%s""", (rental_agreement_id,))
+			return cursor.fetchall()
+
+	def get_agent_data_by_rental_agreement_id(self, rental_agreement_id):
+		"""возвращает данные user по rental_agreement_id, tables: [ra_id_tenant_id, users_agents, users] """
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT u.id, u.name, u.phone, u.email, ua.id
+							  FROM ra_id_agent_id AS riai
+							  JOIN users_agents AS ua
+							  ON riai.agent_id=ua.id
+							  JOIN users AS u
+							  ON u.id=ua.user_id
+							  WHERE riai.rental_agreement_id=%s""", (rental_agreement_id,))
+			return cursor.fetchall()
 
 
 
@@ -1076,32 +1420,46 @@ class RentalObgectDM:
 		    	i = [j.replace('\xa0', '') for j in i] # удаляем лишние неразрывные пробелы \xa0
 		    return return_data
 
-	def create_rental_object(self, rental_object_type, landlord_id): # landlord_id = user_id
+
+
+	# ------------------------ СОЗДАНИЕ ОБЪЕКТОВ АРЕНДЫ (вспомогательные функции) ------------------------
+	# def get_renatal_object_type_by_renatal_object_type_id(self, landlord_id):
+	# 	with self.context_manager(self.config) as cursor:		
+	# 		cursor.execute("""SELECT rot.type 
+	# 						  FROM rental_objects AS ro
+	# 						  JOIN rental_object_types AS rot
+	# 						  ON ro.type_id=rot.id
+	# 						  WHERE ro.landlord_id=%s""", (landlord_id,))
+	# 		return cursor.fetchall()[0][0]
+
+
+	# ------------------------ СОЗДАНИЕ ОБЪЕКТОВ АРЕНДЫ ------------------------
+	def create_rental_object(self, type_id, name, landlord_id): 
 		"""Добавление объекта аренды"""
 		with self.context_manager(self.config) as cursor:
-			# проверяем верно ли введен тип объекта аренды
-			cursor.execute("""SELECT type FROM rental_object_types""")
-			exist_rental_object_types = [i[0] for i in cursor.fetchall()]
-			if rental_object_type not in exist_rental_object_types:
-				raise ValueError('Такого объекта аренды не существует')
 
-			# получаем id типа объекта аренды
-			cursor.execute("""SELECT id FROM rental_object_types WHERE type=%s""", (rental_object_type,))
-			rental_object_type_id = cursor.fetchall()[0][0]
-			
 			# rental_objects (базовая таблица)
-			cursor.execute("""INSERT INTO rental_objects(type_id, landlord_id) VALUES(%s, %s)""", (rental_object_type_id, landlord_id))
+			cursor.execute("""INSERT INTO rental_objects(type_id, name) VALUES(%s, %s)""", (type_id, name))
 
 			# получаем последний id таблицы rental_objects
-			cursor.execute("""SELECT id FROM rental_objects WHERE id=LAST_INSERT_ID()""") 
-			rental_object_id = cursor.fetchall()[0][0] 
+			cursor.execute("""SELECT max(id) FROM rental_objects""") 
+			rental_object_id = cursor.fetchall()[0][0]
+
+			# связываем объект аренды с наймодателем
+			cursor.execute("""INSERT INTO users_landlord_id_rental_object_id(landlord_id, rental_object_id)
+							  VALUE (%s, %s)""", (landlord_id, rental_object_id))	
+
+
+			# получаем тип объекта по id типа объекта
+			cursor.execute("""SELECT type from rental_object_types WHERE id=%s""", (type_id,))
+			type_ = cursor.fetchall()[0][0]
 
 			# создание записей в таблице в зависимости от типа объекта аренды
-			if rental_object_type == 'комната':
+			if type_  == 'комната':
 				cursor.execute("""INSERT INTO ro_room(rental_object_id) VALUES(%s)""", (rental_object_id,))
-			elif rental_object_type == 'квартира':
+			elif type_  == 'квартира':
 				cursor.execute("""INSERT INTO ro_flat(rental_object_id) VALUES(%s)""", (rental_object_id,))
-			elif rental_object_type == 'дом':
+			elif type_  == 'дом':
 				cursor.execute("""INSERT INTO ro_house(rental_object_id) VALUES(%s)""", (rental_object_id,))
 
 			# ro_general (общая информация)
@@ -1116,11 +1474,10 @@ class RentalObgectDM:
 			# ro_object_data (объект аренды)
 			cursor.execute("""INSERT INTO ro_object_data(rental_object_id) VALUES(%s)""", (rental_object_id,))
 
-			# ro_object_data (объект аренды)
+			# ro_location (локация)
 			cursor.execute("""INSERT INTO ro_location(rental_object_id) VALUES(%s)""", (rental_object_id,))
 
 	
-
 			# ro_building_elevators (лифты)
 			cursor.execute("""INSERT INTO ro_building_elevators(rental_object_id) VALUES(%s)""", (rental_object_id,))
 
@@ -1136,6 +1493,229 @@ class RentalObgectDM:
 			# ro_country_city_district (страна-город-район)
 			cursor.execute("""INSERT INTO ro_country_city_district(rental_object_id) VALUES(%s)""", (rental_object_id,))
 
+
+
+	# ------------------------ УДАЛЕНИЕ ОБЪЕКТОВ АРЕНДЫ ------------------------ 
+	def delete_rental_object(self, rental_object_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""DELETE FROM rental_objects WHERE id=%s""", (rental_object_id,))	
+
+
+	# 
+
+	# FOR RENATAL OBJECTS DATA OF LADLORD OUTPUT
+	def get_rental_object_id_of_landlord(self, landlord_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT rental_object_id FROM users_landlord_id_rental_object_id WHERE landlord_id=%s""", (landlord_id,))
+			return [i[0] for i in cursor.fetchall()]
+
+
+	def get_rental_objects_data_of_landlord(self, landlord_id):
+		"""возвращает данные всех объектов аренды данного наймодателя
+		   для landlord_id, tenant_id и agent_id подставляются соответствующие user_id  
+		"""
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT ro.id, rot.type, ro.name
+							  FROM rental_objects AS ro
+							  JOIN rental_object_types AS rot
+							  ON ro.type_id = rot.id
+							  JOIN users_landlord_id_rental_object_id AS uliroi
+							  ON ro.id = uliroi.rental_object_id
+							  WHERE uliroi.landlord_id=%s""", (landlord_id,))
+			return cursor.fetchall()
+
+
+
+	# GET RENTAL OBJECT TYPES WITH ID
+	def get_rental_objects_types(self):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT id, type FROM rental_object_types""")
+			return [i for i in cursor.fetchall()]	
+
+	# GET BATHROOM TYPES WITH ID
+	def get_bathroom_types(self):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT id, type FROM bathroom_types""")
+			return [i for i in cursor.fetchall()]
+
+	# GET WASH PLACE TYPES WITH ID
+	def get_wash_place_types(self):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT id, type FROM wash_place_type""")
+			return [i for i in cursor.fetchall()]
+
+	# GET BUILDING TYPES WITH ID
+	def get_building_types(self):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT id, type FROM building_types""")
+			return [i for i in cursor.fetchall()]
+
+
+	# GET COUNTRIES WITH ID
+	def get_countries(self):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT id, country FROM countries""")		
+			return [i for i in cursor.fetchall()]
+
+	# GET CITIES WITH ID AND COUNTRY_ID
+	def get_cities(self):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT id, country_id, city FROM cities""")		
+			return [i for i in cursor.fetchall()]
+
+	# GET DISTRICTS WITH ID AND CITY_ID
+	def get_districts(self):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT id, city_id, district FROM districts""")		
+			return [i for i in cursor.fetchall()]
+
+
+
+
+
+	# GET RENTAL OBJECT ROOM DATA
+	def get_rental_object_data_room(self, rental_object_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT ro.id, rot.type, ro.name, rr.total_area, rr.rooms_number
+							  FROM rental_objects AS ro
+							  JOIN rental_object_types AS rot
+							  ON ro.type_id=rot.id
+							  JOIN ro_room AS rr
+							  ON ro.id=rr.rental_object_id
+							  WHERE ro.id=%s""", (rental_object_id,))
+			return [i for i in cursor.fetchall()[0]]
+
+	# GET RENTAL OBJECT FLAT DATA
+	def get_rental_object_data_flat(self, rental_object_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT ro.id, rot.type, ro.name
+							  FROM rental_objects AS ro
+							  JOIN rental_object_types AS rot
+							  ON ro.type_id=rot.id
+							  JOIN ro_flat AS rf
+							  ON ro.id=rf.rental_object_id
+							  WHERE ro.id=%s""", (rental_object_id,))
+			return [i for i in cursor.fetchall()[0]]
+
+
+	# GET RENTAL OBJECT HOUSE DATA
+	def get_rental_object_data_house(self, rental_object_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT ro.id, rot.type, ro.name
+							  FROM rental_objects AS ro
+							  JOIN rental_object_types AS rot
+							  ON ro.type_id=rot.id
+							  JOIN ro_house AS rh
+							  ON ro.id=rh.rental_object_id
+							  WHERE ro.id=%s""", (rental_object_id,))
+			return [i for i in cursor.fetchall()[0]]
+
+	# GET GENERAL DATA
+	def get_general_data(self, rental_object_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT rental_object_id, cadastral_number, title_deed FROM ro_general WHERE rental_object_id=%s""", (rental_object_id,))
+			return [i for i in cursor.fetchall()[0]]
+
+
+
+	# GET OBJECT DATA
+	def get_object_data(self, rental_object_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT ro_od.rental_object_id, bt.type, wpt.type, ro_od.area, ro_od.ceilings_height, 
+									 ro_od.win_number, ro_od.balcony, ro_od.air_conditioner, ro_od.wi_fi, ro_od.furniture
+							  FROM ro_object_data AS ro_od
+							  JOIN bathroom_types AS bt
+							  ON ro_od.bathroom_type_id=bt.id
+							  JOIN wash_place_type AS wpt
+							  ON ro_od.wash_place_type_id=wpt.id						  
+							  WHERE ro_od.rental_object_id=%s""", (rental_object_id,))
+			object_data = [i for i in cursor.fetchall()[0]]
+
+
+			cursor.execute("""SELECT street, yard 
+							  FROM ro_object_data_window_overlooks
+							  WHERE rental_object_id=%s""", (rental_object_id,))
+			gotten_data = cursor.fetchall()[0]
+			window_overlooks = {'street':gotten_data[0], 'yard':gotten_data[1]}
+			object_data.append(window_overlooks)
+
+
+			cursor.execute("""SELECT wood, plastic 
+							  FROM ro_object_data_window_frame_types
+							  WHERE rental_object_id=%s""", (rental_object_id,))
+			gotten_data = cursor.fetchall()[0]
+			window_frame_type = {'wood':gotten_data[0], 'plastic':gotten_data[1]}
+			object_data.append(window_frame_type)
+
+			cursor.execute("""SELECT electric, gas
+							  FROM ro_object_data_cooking_range_types
+							  WHERE rental_object_id=%s""", (rental_object_id,))
+			gotten_data = cursor.fetchall()[0]
+			cooking_range_types = {'electric':gotten_data[0], 'gas':gotten_data[1]}
+			object_data.append(cooking_range_types)
+
+			return object_data
+			
+
+	# GET BUILDING DATA
+	def get_building_data(self, rental_object_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT ro_b.rental_object_id, bt.type, ro_b.floors_number, ro_b.garbage_disposal, 
+									 ro_b.intercom, ro_b.concierge, ro_b.building_year
+							  FROM ro_building AS ro_b
+							  JOIN building_types AS bt
+							  ON ro_b.building_type_id = bt.id
+							  WHERE ro_b.rental_object_id=%s""", (rental_object_id,))
+			building_data = [i for i in cursor.fetchall()[0]]
+
+			cursor.execute("""SELECT passenger, freight
+							  FROM ro_building_elevators 
+							  WHERE rental_object_id=%s""", (rental_object_id,))
+			gotten_data = cursor.fetchall()[0]
+			elevators = {'passenger':gotten_data[0], 'freight':gotten_data[1]}
+			building_data.append(elevators)
+
+			return building_data 
+
+
+	# GET LOCATION DATA
+	def get_location_data(self, rental_object_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT rental_object_id, country, federal_district, region, city, city_district, street, building_number, 
+				                     block_number, appt, entrance_number, floor, coords, nearest_metro_stations, location_comment
+							  FROM ro_location
+							  WHERE rental_object_id=%s""", (rental_object_id,))
+
+			location_data = [i for i in cursor.fetchall()[0]]
+			return location_data
+
+	# GET APPLIANCE DATA
+	def get_appliances_data(self, rental_object_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT rental_object_id, fridge, dishwasher, washer, television, vacuum, teapot, iron, microwave
+							  FROM ro_appliances
+							  WHERE rental_object_id=%s""", (rental_object_id,))
+			return [i for i in cursor.fetchall()[0]]
+
+
+
+	# GET RENTAL OBJECT THINGS DATA
+	def get_ro_things_data(self, rental_object_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT id, rental_object_id, thing_number, thing_name, amount, cost
+							  FROM ro_things
+							  WHERE rental_object_id=%s""", (rental_object_id,))
+			return cursor.fetchall()
+
+
+
+	# GET COSTS DATA
+	def get_costs_data(self, rental_object_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT id, rental_object_id, name, is_payer_landlord
+							  FROM ro_costs
+							  WHERE rental_object_id=%s""", (rental_object_id,))
+			return cursor.fetchall()
 
 
 
@@ -1186,6 +1766,17 @@ class RentalObgectDM:
 			return cursor.fetchall()[0][0]
 
 
+	# GET ALL GENERAL DATA [ro_general]
+	def get_ro_general_data(self, rental_object_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT rental_object_id, cadastral_number, title_deed FROM ro_general WHERE rental_object_id=%s""", (rental_object_id,))
+			return [i for i in cursor.fetchall()[0]]
+
+
+
+
+
+
 	# GET ATTRIBUTES [ro_things]: ['things']
 	def get_things(self, rental_object_id):
 		"""Возвращает данные о вещах в объекте"""
@@ -1210,10 +1801,6 @@ class RentalObgectDM:
 			for cost in cursor.fetchall():
 				maintenance_costs.append([i for i in cost])
 			return maintenance_costs
-
-
-
-
 
 
 
@@ -1496,19 +2083,15 @@ class RentalObgectDM:
 
 
 
-	# SET ATTRIBUTES [rental_objects]: tenant_id, agent_id, rental_agreement_id
+	# SET ATTRIBUTES [rental_objects]: name
 
-	# def set_rental_object_tenant_id(self, rental_object_id, value):
-	# 	with self.context_manager(self.config) as cursor:
-	# 		cursor.execute("""UPDATE general_objects SET tenant_id=%s WHERE rental_object_id=%s""", (value, rental_object_id,))
+	def set_rental_object_name(self, rental_object_id, value):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""UPDATE rental_objects SET name=%s WHERE id=%s""", (value, rental_object_id,))
 
 
 
 	# SET ATTRIBUTES [ro_general]: ['name', 'cadastral_number', 'title_deed']
-	def set_ro_general_name(self, rental_object_id, value):
-		with self.context_manager(self.config) as cursor:
-			cursor.execute("""UPDATE ro_general SET name=%s WHERE rental_object_id=%s""", (value, rental_object_id,))
-
 	def set_ro_general_cadastral_number(self, rental_object_id, value):
 		with self.context_manager(self.config) as cursor:
 			cursor.execute("""UPDATE ro_general SET cadastral_number=%s WHERE rental_object_id=%s""", (value, rental_object_id,))
@@ -1518,8 +2101,16 @@ class RentalObgectDM:
 			cursor.execute("""UPDATE ro_general SET title_deed=%s WHERE rental_object_id=%s""", (value, rental_object_id,))
 
 
+	# SET ALL GENERAL DATA [ro_general]
+	def set_ro_general_data(self, rental_object_id, cadastral_number, title_deed):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""UPDATE ro_general 
+							  SET cadastral_number=%s, title_deed=%s 
+							  WHERE rental_object_id=%s""", (cadastral_number, title_deed, rental_object_id,))
+
+
 	# SET ATTRIBUTES [ro_things]: ['things']
-	def set_things(self, rental_object_id, things:list):
+	def set_ro_things(self, rental_object_id, things:list):
 		with self.context_manager(self.config) as cursor:
 			# удаляем все данные о вещах для этого объекта аренды
 			cursor.execute("""DELETE FROM ro_things WHERE rental_object_id=%s""", (rental_object_id,))
@@ -1528,6 +2119,37 @@ class RentalObgectDM:
 				cursor.execute("""INSERT INTO ro_things(rental_object_id, thing_number, thing_name, amount, cost) 
 							      VALUES (%s, %s, %s, %s, %s)""", 
 							      (rental_object_id, i[0], i[1], i[2], i[3]))
+
+	def del_all_things_by_rental_object_id(self, rental_object_id):
+		with self.context_manager(self.config) as cursor:
+			# удаляем все данные о вещах для этого объекта аренды
+			cursor.execute("""DELETE FROM ro_things WHERE rental_object_id=%s""", (rental_object_id,))		
+
+
+	def update_ro_costs(self, cost_id, name, is_payer_landlord):
+		with self.context_manager(self.config) as cursor:
+			# обновляем существующие
+			cursor.execute("""UPDATE ro_costs 
+						      SET name=%s, is_payer_landlord=%s
+						      WHERE id=%s""", 
+						      (name, is_payer_landlord, cost_id))
+			
+	def insert_ro_costs(self, rental_object_id, name, is_payer_landlord):
+		with self.context_manager(self.config) as cursor:
+			# загружаем новые данные
+			cursor.execute("""INSERT INTO ro_costs(rental_object_id, name, is_payer_landlord) 
+							  VALUES (%s, %s, %s)""", 
+						      (rental_object_id, name, is_payer_landlord))
+
+	def del_cost(self, cost_id):
+		with self.context_manager(self.config) as cursor:	
+			cursor.execute("""DELETE FROM ro_costs WHERE id=%s""", (cost_id,))	
+
+
+
+
+
+
 
 	# SET ATTRIBUTES [ro_maintenance_costs]: ['maintenance_costs']
 	def set_maintenance_costs(self, rental_object_id, maintenance_costs:list):
@@ -1592,6 +2214,22 @@ class RentalObgectDM:
 
 
 
+	def set_ro_object_data(self, rental_object_id, bathroom_type_id, wash_place_id, area, ceilings_height, win_number, balcony, 
+							  air_conditioner, wi_fi, furniture):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""UPDATE ro_object_data 
+							  SET bathroom_type_id=%s, 
+							  	  wash_place_type_id=%s, 
+
+							  	  area=%s, 
+							  	  ceilings_height=%s, 
+							      win_number=%s, 
+
+							      balcony=%s, air_conditioner=%s, wi_fi=%s, furniture=%s
+							  WHERE rental_object_id=%s""", (bathroom_type_id, wash_place_id, area, ceilings_height, win_number, balcony, 
+							  air_conditioner, wi_fi, furniture, rental_object_id,))	
+
+
 
 	def set_ro_object_data_data_window_overlook(self, rental_object_id, value:dict):
 		with self.context_manager(self.config) as cursor:
@@ -1635,6 +2273,7 @@ class RentalObgectDM:
 
 
 
+
 	# SET ATTRIBUTES [BUILDING]: building_type_id, floors_number, garbage_disposal, intercom, concierge, building_year, elevator
 	def set_ro_building_building_type_id(self, rental_object_id, value:int):
 		with self.context_manager(self.config) as cursor:
@@ -1665,6 +2304,17 @@ class RentalObgectDM:
 			cursor.execute("""UPDATE ro_building SET X=%s WHERE rental_object_id=%s""", (value, rental_object_id,))
 
 
+
+	def set_ro_building(self, rental_object_id, building_type_id, floors_number, garbage_disposal, intercom, concierge, building_year):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""UPDATE ro_building
+							  SET building_type_id=%s, floors_number=%s, garbage_disposal=%s, 
+							      intercom=%s, concierge=%s, building_year=%s
+							  WHERE rental_object_id=%s""", (building_type_id, floors_number, garbage_disposal, 
+							  								 intercom, concierge, building_year, rental_object_id))
+
+
+
 	def set_ro_building_elevator(self, rental_object_id, value:dict):
 		with self.context_manager(self.config) as cursor:
 			for k,v in value.items():
@@ -1678,57 +2328,19 @@ class RentalObgectDM:
 							 	      WHERE rental_object_id=%s""", (v, rental_object_id,))
 
 
-	# SET ATTRIBUTES [LOCATION]: coords, country, region, city, district, street, building_number, block_number,
-	#                            appt, entrance_number, floor, location_comment, nearest_metro_stations 
-
-
-	def set_ro_location_coords(self, rental_object_id, value):
+	# SET ALL LOCATION DATA [ro_location]:
+	def set_ro_location_data(self, rental_object_id, country, federal_district, region, city, city_district, street, building_number,
+					   block_number, appt, entrance_number, floor, coords, nearest_metro_stations, location_comment):
 		with self.context_manager(self.config) as cursor:
-			cursor.execute("""UPDATE ro_location SET coords=%s WHERE rental_object_id=%s""", (value, rental_object_id))
+			cursor.execute("""UPDATE ro_location
+							  SET country=%s, federal_district=%s, region=%s, city=%s, city_district=%s, street=%s, building_number=%s,
+					   			  block_number=%s, appt=%s, entrance_number=%s, floor=%s, coords=%s, nearest_metro_stations=%s, location_comment=%s
+					   		  WHERE rental_object_id=%s""", 
+					   		  ( country, federal_district, region, city, city_district, street, building_number,
+					   block_number, appt, entrance_number, floor, coords, nearest_metro_stations, location_comment, rental_object_id))
 
-	def set_ro_location_country(self, rental_object_id, value):
-		with self.context_manager(self.config) as cursor:
-			cursor.execute("""UPDATE ro_location SET country=%s WHERE rental_object_id=%s""", (value, rental_object_id))
 
-	def set_ro_location_region(self, rental_object_id, value):
-		with self.context_manager(self.config) as cursor:
-			cursor.execute("""UPDATE ro_location SET region=%s WHERE rental_object_id=%s""", (value, rental_object_id))
 
-	def set_ro_location_city(self, rental_object_id, value):
-		with self.context_manager(self.config) as cursor:
-			cursor.execute("""UPDATE ro_location SET city=%s WHERE rental_object_id=%s""", (value, rental_object_id))
-
-	def set_ro_location_district(self, rental_object_id, value):
-		with self.context_manager(self.config) as cursor:
-			cursor.execute("""UPDATE ro_location SET district=%s WHERE rental_object_id=%s""", (value, rental_object_id))
-
-	def set_ro_location_street(self, rental_object_id, value):
-		with self.context_manager(self.config) as cursor:
-			cursor.execute("""UPDATE ro_location SET street=%s WHERE rental_object_id=%s""", (value, rental_object_id))
-
-	def set_ro_location_building_number(self, rental_object_id, value):
-		with self.context_manager(self.config) as cursor:
-			cursor.execute("""UPDATE ro_location SET building_number=%s WHERE rental_object_id=%s""", (value, rental_object_id))
-
-	def set_ro_location_block_number(self, rental_object_id, value):
-		with self.context_manager(self.config) as cursor:
-			cursor.execute("""UPDATE ro_location SET block_number=%s WHERE rental_object_id=%s""", (value, rental_object_id))
-
-	def set_ro_location_appt(self, rental_object_id, value):
-		with self.context_manager(self.config) as cursor:
-			cursor.execute("""UPDATE ro_location SET appt=%s WHERE rental_object_id=%s""", (value, rental_object_id))
-
-	def set_ro_location_entrance_number(self, rental_object_id, value):
-		with self.context_manager(self.config) as cursor:
-			cursor.execute("""UPDATE ro_location SET entrance_number=%s WHERE rental_object_id=%s""", (value, rental_object_id))
-
-	def set_ro_location_floor(self, rental_object_id, value):
-		with self.context_manager(self.config) as cursor:
-			cursor.execute("""UPDATE ro_location SET floor=%s WHERE rental_object_id=%s""", (value, rental_object_id))
-
-	def set_ro_location_location_comment(self, rental_object_id, value):
-		with self.context_manager(self.config) as cursor:
-			cursor.execute("""UPDATE ro_location SET location_comment=%s WHERE rental_object_id=%s""", (value, rental_object_id))
 
 
 	def get_ro_location_nearest_metro_stations(self, rental_object_id):
@@ -1786,20 +2398,203 @@ class RentalObgectDM:
 			cursor.execute("""UPDATE ro_appliances SET microwave=%s WHERE rental_object_id=%s""", (value, rental_object_id))
 
 
+	# SET ALL APPLIANCES DATA [ro_appliances]:
+	def set_ro_appliances_data(self, rental_object_id,  fridge, dishwasher, washer, television, vacuum, teapot, iron, microwave):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""UPDATE ro_appliances
+							  SET fridge=%s, dishwasher=%s, washer=%s, television=%s, vacuum=%s, teapot=%s, iron=%s, microwave=%s
+							  WHERE rental_object_id=%s""", 
+							  (fridge, dishwasher, washer, television, vacuum, teapot, iron, microwave,rental_object_id))	
+
+	# SET ALL ROOM DATA [ro_room]:
+	def set_ro_room_data(self, rental_object_id, total_area, rooms_number):
+		with self.context_manager(self.config) as cursor: 
+			cursor.execute("""UPDATE ro_room 
+							  SET total_area=%s, rooms_number=%s
+							  WHERE rental_object_id=%s""", 
+							  (total_area, rooms_number, rental_object_id))		
+
+
 
 
 class RentalAgreementDM:
-	"""Создание договора аренды"""
-	def create_rental_agreement(self, landlord_user_id, tenant_user_id, rental_object_id, agent_user_id=None):
+	def add_rental_agreement_status(self, status):
+		"""Добавление типа пользователей"""
 		with self.context_manager(self.config) as cursor:
-			cursor.execute("""INSERT INTO rental_agreements(agent_id, landlord_id, tenant_id, rental_object_id)
-						      VALUES (%s, %s, %s, %s)""", (agent_user_id, landlord_user_id, tenant_user_id, rental_object_id))
+			cursor.execute("""INSERT INTO ra_status(status) VALUES (%s)""", (status,))
+
+	"""Создание договора аренды"""
+	def create_rental_agreement(self, agreement_number, status, landlord_id):
+		with self.context_manager(self.config) as cursor:
+			# создаем таблицу договоров аренды
+			cursor.execute("""INSERT INTO rental_agreements(agreement_number, status)
+						      VALUES (%s, %s)""", (agreement_number, status))
 			
+			# получаем последний добавленный в таблицу rental_agreements id
 			cursor.execute("""SELECT id FROM rental_agreements WHERE id=LAST_INSERT_ID()""") 
 			rental_agreement_id = cursor.fetchall()[0][0] 
 
-			cursor.execute("""INSERT INTO ra_general_conditions(rental_agreement_id)
+			# создаем таблицу c условиями аренды, связываем ее с договором
+			cursor.execute("""INSERT INTO ra_conditions(rental_agreement_id)
 							  VALUES(%s) """, (rental_agreement_id,))
+
+			# добавляем связь договора с наймодателем
+			cursor.execute("""INSERT INTO users_landlord_id_rental_agreements_id(landlord_id, rental_agreement_id)
+							  VALUES (%s, %s)""", (landlord_id, rental_agreement_id))
+
+			# создаем таблицу Акта сдачи-приемки,связываем ее с договором
+			cursor.execute("""INSERT INTO ra_move_in (rental_agreement_id) 
+							  VALUES (%s)""", (rental_agreement_id,))
+
+			# создаем таблицу Акта возврата,связываем ее с договором
+			cursor.execute("""INSERT INTO ra_move_out (rental_agreement_id) 
+							  VALUES (%s)""", (rental_agreement_id,))
+
+			# cоздаем таблицу Соглашения о досрочном расторжении, связываем ее с договором
+			cursor.execute("""INSERT INTO ra_termination (rental_agreement_id) 
+							  VALUES (%s)""", (rental_agreement_id,))
+
+			# cоздаем таблицу Соглашения о продлении, связываем ее с договором
+			cursor.execute("""INSERT INTO ra_renewal (rental_agreement_id) 
+							  VALUES (%s)""", (rental_agreement_id,))
+
+
+	def delete_rental_agreement(self, rental_agreement_id):
+		"""удаление договора аренды"""
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""DELETE FROM rental_agreements WHERE id=%s""", (rental_agreement_id,))		
+
+
+	# FOR RENATAL OBJECTS DATA OF LADLORD OUTPUT
+	def get_rental_agreement_id_of_landlord(self, landlord_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT rental_agreement_id FROM users_landlord_id_rental_agreements_id WHERE landlord_id=%s""", (landlord_id,))
+			return [i[0] for i in cursor.fetchall()]
+
+
+
+
+
+	def get_rental_agreement_data_of_landlord(self, landlord_id):
+		"""возвращает данные всех договоров аренды данного наймодателя
+		"""
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT ra.id, ra.agreement_number, ra.status 
+						      FROM rental_agreements AS ra
+						      JOIN users_landlord_id_rental_agreements_id AS ulira
+						      ON ulira.rental_agreement_id=ra.id
+						      WHERE ulira.landlord_id=%s""", (landlord_id,))
+			return cursor.fetchall()
+
+
+	# GET RANTAL OBJECT DATA BY RENATAL AGREEMENT ID
+	def get_rental_object_data_by_rental_agreement_id(self, rental_agreement_id):
+		with self.context_manager(self.config) as cursor:	
+			cursor.execute("""SELECT ro.id, rot.type, ro.name
+							  FROM rental_objects AS ro
+							  JOIN ra_id_rental_object_id AS riroi
+							  ON ro.id=riroi.rental_object_id
+							  JOIN rental_object_types AS rot
+							  ON ro.type_id=rot.id
+							  WHERE riroi.rental_agreement_id = %s""", (rental_agreement_id,))
+			return cursor.fetchall()
+
+
+
+	def get_last_agreement_number(self):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT max(agreement_number) FROM rental_agreements""")
+			return cursor.fetchall()[0][0]
+
+
+
+
+	# GET RENTAL AGREEMENT DATA
+	def get_rental_agreement_data(self, rental_agreement_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT id, agreement_number, status
+							  FROM rental_agreements
+							  WHERE id=%s""", (rental_agreement_id,))
+			return [i for i in cursor.fetchall()[0]]
+
+
+
+	# GET RENTAL OBJECT DATA (CURRENT RENATAL AGREEMENT)
+	def get_ra_rental_object_data(self, rental_agreement_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT rental_object_id, type, address, title_deed
+							  FROM ra_rental_object 
+							  WHERE rental_agreement_id=%s""", (rental_agreement_id,))
+			return cursor.fetchall()[0]
+
+	# GET LANDLORD DATA (CURRENT RENATAL AGREEMENT)
+	def get_ra_landlord_data(self, rental_agreement_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT landlord_id, last_name, first_name, patronymic, phone, email, serie, pass_number, authority, registration
+							  FROM ra_landlord 
+							  WHERE rental_agreement_id=%s""", (rental_agreement_id,))
+			return cursor.fetchall()[0]
+
+	# GET TENANT DATA (CURRENT RENATAL AGREEMENT)
+	def get_ra_tenant_data(self, rental_agreement_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT tenant_id, last_name, first_name, patronymic, phone, email, serie, pass_number, authority, registration
+							  FROM ra_tenant 
+							  WHERE rental_agreement_id=%s""", (rental_agreement_id,))
+			return cursor.fetchall()[0]
+
+	# GET AGENT DATA (CURRENT RENATAL AGREEMENT)
+	def get_ra_agent_data(self, rental_agreement_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT agent_id, last_name, first_name, patronymic, phone, email, serie, pass_number, authority, registration
+							  FROM ra_agent 
+							  WHERE rental_agreement_id=%s""", (rental_agreement_id,))
+			return cursor.fetchall()[0]
+
+	# GET CONDITIONS DATA (CURRENT RENATAL AGREEMENT)
+	def get_ra_conditions_data(self, rental_agreement_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT rental_agreement_id, rental_rate, prepayment, deposit, late_fee, 
+									 start_of_term, end_of_term, payment_day, cleaning_cost
+							  FROM ra_conditions
+							  WHERE rental_agreement_id=%s""", (rental_agreement_id ,))
+			return cursor.fetchall()[0]		
+
+	# GET MOVE-IN DATA (CURRENT RENATAL AGREEMENT)
+	def get_ra_move_in_data(self, rental_agreement_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT rental_agreement_id, number_of_sets_of_keys, number_of_keys_in_set, 
+									 rental_object_comment, things_comment
+							  FROM ra_move_in
+							  WHERE rental_agreement_id=%s""", (rental_agreement_id ,))
+			return cursor.fetchall()[0]		
+
+	# GET MOVE-IN DATA (CURRENT RENATAL AGREEMENT)
+	def get_ra_move_out_data(self, rental_agreement_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT rental_agreement_id, number_of_sets_of_keys, number_of_keys_in_set, 
+									 rental_object_comment, things_comment, damage_cost, cleaning, 
+									 rental_agreeement_debts, deposit_refund, prepayment_refund
+							  FROM ra_move_out
+							  WHERE rental_agreement_id=%s""", (rental_agreement_id ,))
+			return cursor.fetchall()[0]	
+
+	# GET TERMINATION DATA (CURRENT RENATAL AGREEMENT)
+	def get_ra_termination(self, rental_agreement_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT rental_agreement_id, end_of_term
+							  FROM ra_termination
+							  WHERE rental_agreement_id=%s""", (rental_agreement_id,))
+			return cursor.fetchall()[0]
+
+	# GET RENEWAL DATA (CURRENT RENATAL AGREEMENT)
+	def get_ra_renewal(self, rental_agreement_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT end_of_term
+							  FROM ra_renewal
+							  WHERE rental_agreement_id=%s""", (rental_agreement_id,))
+			return cursor.fetchall()
+
 
 
 
@@ -1919,15 +2714,15 @@ class DataManipulation(Database, UserDM, RentalObgectDM, RentalAgreementDM):
 		for type_ in rental_object_types:
 			self.add_rental_object_type(type_)
 
-		bathroom_types = ['совмещенный', 'раздельный']
+		bathroom_types = ['не указано','совмещенный', 'раздельный']
 		for type_ in bathroom_types:
 			self.add_bathroom_type(type_)
 
-		wash_place_type = ['ванна', 'душевая кабина']
+		wash_place_type = ['не указано', 'ванна', 'душевая кабина']
 		for type_ in wash_place_type:
 			self.add_wash_place_type(type_)
 
-		building_type = ['кирпичный', 'панельный'] 
+		building_type = ['не указано', 'кирпичный', 'панельный'] 
 		for type_ in building_type:
 			self.add_building_type(type_)
 
@@ -1940,6 +2735,10 @@ class DataManipulation(Database, UserDM, RentalObgectDM, RentalAgreementDM):
 			self.add_city(country_id, city)
 
 		self.create_user('администратор', 'Админ Никита', '+792188550028', 'admin@admin.ru', 'admin', generate_password_hash('12345'))
+
+		rental_agreement_statuses = ['черновик', 'заключен', 'досрочно расторгнут', 'завершен', 'продлен'] 
+		for status in rental_agreement_statuses:
+			self.add_rental_agreement_status(status)
 
 		self.add_districts_data()
 

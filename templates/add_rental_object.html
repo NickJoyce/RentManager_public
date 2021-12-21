@@ -1,0 +1,36 @@
+{% extends 'index_landlord.html' %} <!-- Директива extends задает разметку базового шаблона -->
+
+{% block breadcrumbs %} 
+Главная: наймодатель -> Объекты аренды -> {{the_title}}
+{% endblock %}
+
+{% block main_content %} 
+	<!-- мгновенные сообщения -->
+	{% for cat, msg in get_flashed_messages(True) %}
+	<div class='flash {{cat}}'>{{msg}}</div>
+	{% endfor %}
+	<form method='POST' action="{{url_for('add_rental_object')}}">
+		<div class='add_rental_object_form_wrapper'>
+			<div class='add_rental_object_form_header'><div>{{the_title}}</div></div>
+				<div class='add_rental_object_form'>
+					<div>Тип объекта</div> 
+					<div>
+							<select class='add_rental_object_form_select' size="0" name="type_id">
+								<option disabled selected value> --- Выберете тип --- </option>
+								{% for type in rental_objects_types %}
+					 				<option value="{{type[0]}}">{{type[1]}}</option>
+								{% endfor %}
+							</select>
+					</div>
+
+					<div>Наименование</div> 
+					<div><input class='add_rental_object_form_input' name='name' type='TEXT' autocomplete="off" required></div>
+				</div>
+
+				<div class='add_rental_object_form'>
+					<div></div> 
+					<div class='add_rental_object_form_button'><input value='Добавить' type='SUBMIT'></div>
+				</div>
+		</div>
+	</form>
+{% endblock %}

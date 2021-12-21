@@ -13,8 +13,8 @@ class User:
 		self.phone = phone  
 		self.email = email 
 
-		self._passport = None
-		self._register = None 
+		self.passport = None
+		self.register = None 
 
 
 	def chek_email(self):

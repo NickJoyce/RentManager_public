@@ -1,0 +1,474 @@
+{% extends 'index_landlord.html' %} <!-- Директива extends задает разметку базового шаблона -->
+
+{% block breadcrumbs %} 
+Главная: наймодатель -> Объекты аренды -> {{rental_object.name}}
+{% endblock %}
+
+{% block main_content %} 
+<!-- мгновенные сообщения -->
+{% for cat, msg in get_flashed_messages(True) %}
+<div class='flash {{cat}}'>{{msg}}</div>
+{% endfor %}
+
+<!-- Метки выполнения js -->
+<input type="hidden" id='tab_page'/>
+<input type="hidden" id='form_page_rental_object'/>
+
+<div class='details_area_wrapper '>
+	<!-- Tab links -->
+	<div class="tab">
+	  <button class="tablinks" onclick="openData(event, 'info')" id="info_button">Информация</button>
+	  <button class="tablinks" onclick="openData(event, 'object')" id="object_button">Объект</button>
+	  <button class="tablinks" onclick="openData(event, 'building')" id="building_button">Здание</button>
+	  <button class="tablinks" onclick="openData(event, 'location')" id="location_button">Локация</button>
+	  <button class="tablinks" onclick="openData(event, 'appliances')" id="appliance_button">Бытовая техника</button>
+	  <button class="tablinks" onclick="openData(event, 'special')" id="special_button">{{rental_object.type.title()}}</button>
+	  <button class="tablinks" onclick="openData(event, 'things')" id="things_button">Вещи</button>
+	  <button class="tablinks" onclick="openData(event, 'costs')" id="costs_button">Расходы</button>
+	</div>
+
+
+	<!-- TAB CONTENT -->
+	<!-- info content: -->
+	<div id="info" class="tabcontent">
+		<div class='form_wrapper'>
+			<form method='POST' action="{{url_for('edit_rental_object', rental_object_id=rental_object.id)}}">
+				<input type="hidden" value="info_tab" name='source'/>
+				<div class="form_items">
+						<div class='item_text'>Тип</div> 
+						<div>{{rental_object.type.title()}}</div>
+						<div class='item_text'>Имя</div> 
+						<div><input class='item_input' name='name' type='TEXT' value="{{rental_object.name}}" autocomplete="off" required></div>
+						<div class='item_text'>Кадастровый номер</div> 
+						<div><input class='item_input' name='cadastral_number' type='TEXT' value="{{rental_object.general.cadastral_number}}" autocomplete="off" required></div>
+						<div class='item_text'>Право владения</div> 
+						<div><input class='item_input' name='title_deed' type='TEXT' value="{{rental_object.general.title_deed}}" autocomplete="off" required></div>
+				</div>
+				<div class='form_items'>
+					<div></div> 
+					<div class='item_button'><input value='Сохранить' type='SUBMIT'></div>
+				</div>
+			</form>
+		</div>
+	</div>
+
+
+
+	<!-- object content -->
+	<div id="object" class="tabcontent">
+		<div class='form_wrapper'>
+			<form method='POST' action="{{url_for('edit_rental_object', rental_object_id=rental_object.id)}}">
+				<input type="hidden" value="object_tab" name='source'/>
+				<div class="form_items">
+					<div class='item_text'>Санузел</div> 
+					<div>
+						<input type="hidden" value="{{bathroom_types}}" id='db_bathroom_types'>	
+						<input type="hidden" value="{{rental_object.object_data.bathroom_type}}" id='db_bathroom_type'>
+						<select size="0" name="bathroom" id="bathroom_select"></select>
+
+					</div>
+
+					<div class='item_text'>Ванна/Душевая кабина</div> 
+					<div>
+						<input type="hidden" value="{{wash_place_types}}" id='db_wash_place_types'>	
+						<input type="hidden" value="{{rental_object.object_data.wash_place_type}}" id='db_wash_place_type'>
+						<select size="0" name="wash_place" id="wash_place_select">></select>
+					</div>
+
+					<div>Площадь, м²</div> 
+					<div><input class='add_rental_object_form_input' name='area' type="number" step="0.1" 
+						value='{{rental_object.object_data.area}}'  ></div>
+
+					<div>Высота потолков, м</div> 
+					<div><input class='add_rental_object_form_input' name='ceilings_height' type="number" step="0.1" 
+						value='{{rental_object.object_data.ceilings_height}}' ></div>
+
+					<div>Количество окон, шт</div> 
+					<div><input class='add_rental_object_form_input' name='win_number' type="number"
+						value='{{rental_object.object_data.win_number}}'></div>
+
+					<div>Балкон/Лоджия</div> 
+					<input type="hidden" value="{{rental_object.object_data.balcony}}" id='balcony'>
+					<div>
+						<label><input type="radio" name="balcony" value="0" id="balconyNo">Нет</label>
+						<label><input type="radio" name="balcony" value="1" id="balconyYes">Есть</label>
+					</div>
+
+					<div>Кондиционер</div> 
+					<input type="hidden" value="{{rental_object.object_data.air_conditioner}}" id='air_conditioner'>
+					<div>
+						    <label><input type="radio" name="air_conditioner" value="0" id='air_conditionerNo'>Нет</label>
+						    <label><input type="radio" name="air_conditioner" value="1" id='air_conditionerYes'>Есть</label>
+					</div>
+
+					<div>wi-fi</div> 
+					<input type="hidden" value="{{rental_object.object_data.wi_fi}}" id='wi_fi'>
+					<div>
+					    <label><input type="radio" name="wi_fi" value="0" id='wi_fiNo'>Нет</label>
+					    <label><input type="radio" name="wi_fi" value="1" id='wi_fiYes'>Есть</label>
+					</div>
+
+					<div>Мебель</div> 
+					<input type="hidden" value="{{rental_object.object_data.furniture}}" id='furniture'>
+					<div>
+					    <label><input type="radio" name="furniture"  value="0" id='furnitureNo'>Нет</label>
+					    <label><input type="radio" name="furniture"  value="1" id='furnitureYes'>Есть</label>
+					</div>
+					<div>Вид из окна</div> 
+					<div>
+						<input type="hidden" value="{{rental_object.object_data.window_overlook['street']}}" id='db_street_overlook'>
+						<input type="hidden" name='street_overlook' id='street_overlook'>
+						<label><input type="checkbox"  id='checkbox_street_overlook'>На улицу</label>
+
+						<input type="hidden" value="{{rental_object.object_data.window_overlook['yard']}}" id='db_yard_overlook'>
+						<input type="hidden" name='yard_overlook' id='yard_overlook'>						
+						<label><input type="checkbox" id='checkbox_yard_overlook'>Во двор</label>
+					</div>
+
+					<div>Тип окон</div> 
+					<div>
+						<input type="hidden" value="{{rental_object.object_data.window_frame_type['wood']}}" id='db_wood_frame'>
+						<input type="hidden" name='wood_frame' id='wood_frame'>	
+						<label><input type="checkbox" id='checkbox_wood_frame'>Деревянные</label>
+
+						<input type="hidden" value="{{rental_object.object_data.window_frame_type['plastic']}}" id='db_plastic_frame'>
+						<input type="hidden" name='plastic_frame' id='plastic_frame'>	
+						<label><input type="checkbox" id='checkbox_plastic_frame'>Пластиковые</label>
+					</div>
+
+					<div>Тип плиты</div> 
+					<div>
+						<input type="hidden" value="{{rental_object.object_data.cooking_range_type['electric']}}" id='db_electric_cooking_range'>
+						<input type="hidden" name='electric_cooking_range' id='electric_cooking_range'>							
+						<label><input type="checkbox" id='checkbox_electric_cooking_range'>Электрическая</label>
+
+						<input type="hidden" value="{{rental_object.object_data.cooking_range_type['gas']}}" id='db_gas_cooking_range'>
+						<input type="hidden" name='gas_cooking_range' id='gas_cooking_range'>	
+						<label><input type="checkbox" id='checkbox_gas_cooking_range'>Газовая</label>
+					</div>
+				</div>
+				<div class='form_items'>
+					<div></div> 
+					<div class='item_button'><input class='save_object_data' value='Сохранить' type='SUBMIT'></div>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<!-- building content: -->
+	<div id="building" class="tabcontent">
+		<div class='form_wrapper'>
+			<form method='POST' action="{{url_for('edit_rental_object', rental_object_id=rental_object.id)}}">
+				<input type="hidden" value="building_tab" name='source'/>
+				<div class="form_items">
+					<div class='item_text'>Тип здания</div> 
+					<div>
+						<select name="building_type" id="building_type_select" size="0"></select>
+						<input type="hidden" id='db_building_types' value="{{building_types}}" >
+						<input type="hidden" id='db_building_type' value="{{rental_object.building.building_type}}">
+					</div>
+
+					<div class='item_text'>Количество этажей</div> 
+					<div><input type="number"  class='input_text' name='win_number' value='{{rental_object.building.floors_number}}'></div>
+
+					<div class='item_text'>Мусоропровод</div> 
+					<div>
+						<input type="hidden" id='garbage_disposal_db' value="{{rental_object.building.garbage_disposal}}">
+						<label><input type="radio" id="garbage_disposalNo" name="garbage_disposal" value="0">Нет</label>
+						<label><input type="radio" id="garbage_disposalYes" name="garbage_disposal" value="1">Есть</label>							
+					</div>
+
+					<div class='item_text'>Домофон</div> 
+					<div>
+						<input type="hidden" id='intercom_db' value="{{rental_object.building.intercom}}">
+						<label><input type="radio" id="intercomNo" name="intercom" value="0">Нет</label>
+						<label><input type="radio" id="intercomYes" name="intercom" value="1">Есть</label>	
+					</div>
+					<div class='item_text'>Консьерж</div> 
+					<div>
+						<input type="hidden" id='concierge_db' value="{{rental_object.building.concierge}}">
+						<label><input type="radio" id="conciergeNo" name="concierge" value="0">Нет</label>
+						<label><input type="radio" id="conciergeYes" name="concierge" value="1">Есть</label>								
+					</div>
+
+					<div class='item_text'>Год постройки</div> 
+					<div><input type="number" class='input_text' name="building_year" value="{{rental_object.building.building_year}}" min='1800' max='2100'></div>
+
+					<div class='item_text'>Лифты</div> 
+					<div>
+						<input type="hidden" id='db_passenger_elevator' value="{{rental_object.building.elevator['passenger']}}">
+						<input type="hidden" id='passenger_elevator' name='passenger_elevator'>							
+						<label><input type="checkbox" id='checkbox_passenger_elevator'>Электрическая</label>
+
+						<input type="hidden" id='db_freight_elevator' value="{{rental_object.building.elevator['freight']}}">
+						<input type="hidden" id='freight_elevator' name='freight_elevator'>	
+						<label><input type="checkbox" id='checkbox_freight_elevator'>Газовая</label>							
+					</div>
+				</div>
+				<div class='form_items'>
+					<div></div> 
+					<div class='item_button'><input type='SUBMIT' class='save_building_data' value='Сохранить'></div>
+				</div>
+			</form>
+		</div>
+	</div>
+
+
+	<!-- location content: -->
+	<div id="location" class="tabcontent">
+		<div class='form_wrapper'>
+			<form method='POST' action="{{url_for('edit_rental_object', rental_object_id=rental_object.id)}}">
+				<input type="hidden" value="location_tab" name='source'/>
+				<div class="form_items">
+					<div class='item_text'>Страна</div> 
+					<div>{{rental_object.location.country}}</div>
+					<input type="hidden" name="country" value="{{rental_object.location.country}}">
+
+					<div class='item_text'>Федеральный округ</div> 
+					<div><input type="text" class='input_text' name="federal_district" value="{{rental_object.location.federal_district}}"></div>
+
+					<div class='item_text'>Субъект РФ</div> 
+					<div><input type="text" class='input_text' name="region" value="{{rental_object.location.region}}"></div>
+
+					<div class='item_text'>Город</div> 
+					<div><input type="text" class='input_text' name="city" value="{{rental_object.location.city}}"></div>
+
+					<div class='item_text'>Район</div> 
+					<div><input type="text" class='input_text' name="city_district" value="{{rental_object.location.city_district}}"></div>
+
+					<div class='item_text'>Улица</div> 
+					<div><input type="text" class='input_text' name="street" value="{{rental_object.location.street}}"></div>
+
+					<div class='item_text'>Номер дома</div> 
+					<div><input type="text" class='input_text' name="building_number" value="{{rental_object.location.building_number}}"></div>
+
+					<div class='item_text'>Корпус</div> 
+					<div><input type="text" class='input_text' name="block_number" value="{{rental_object.location.block_number}}"></div>
+
+					<div class='item_text'>Номер квартиры</div> 
+					<div><input type="text" class='input_text' name="appt" value="{{rental_object.location.appt}}"></div>
+
+					<div class='item_text'>Номер подъезда</div> 
+					<div><input type="text" class='input_text' name="entrance_number" value="{{rental_object.location.entrance_number}}"></div>
+
+					<div class='item_text'>Этаж</div> 
+					<div><input type="text" class='input_text' name="floor" value="{{rental_object.location.floor}}"></div>
+				</div>
+
+				<div class='form_items'>				
+					<div class='item_text'>Координаты</div> 
+					<div><input type="text" class='input_text' name="coords" value="{{rental_object.location.coords}}"></div>
+
+					<div class='item_text'>Ближайшие станции метро</div> 
+					<div><input type="text" class='input_text' name="nearest_metro_stations" value="{{rental_object.location.nearest_metro_stations}}"></div>
+				</div>
+
+				<div class='form_items'>
+					<div class='item_text'>Комментарий</div> 
+					<div><textarea name="location_comment">{{rental_object.location.location_comment}}</textarea></div>
+				</div>
+				<div class='form_items'>
+					<div></div> 
+					<div class='item_button'><input type='SUBMIT' class='save_location_data' value='Сохранить'></div>
+				</div>
+			</form>
+		</div>
+	</div>
+
+
+	<!-- appliances content: -->
+	<div id="appliances" class="tabcontent">
+		<div class='form_wrapper'>
+			<form method='POST' action="{{url_for('edit_rental_object', rental_object_id=rental_object.id)}}">
+				<input type="hidden" value="appliances_tab" name='source'/>
+				<div class="form_items">
+					<div class='item_text'>Хододильник</div> 
+					<div>
+						<input type="hidden" id='db_fridge' value="{{rental_object.appliances.fridge}}">
+						<label><input type="radio" id="fridgeNo" name="fridge" value="0">Нет</label>
+						<label><input type="radio" id="fridgeYes" name="fridge" value="1">Есть</label>							
+					</div>
+
+
+					<div class='item_text'>Посудомечная машина</div> 
+					<div>
+						<input type="hidden" id='db_dishwasher' value="{{rental_object.appliances.dishwasher}}">
+						<label><input type="radio" id="dishwasherNo" name="dishwasher" value="0">Нет</label>
+						<label><input type="radio" id="dishwasherYes" name="dishwasher" value="1">Есть</label>							
+					</div>
+
+					<div class='item_text'>Стиральная машина</div> 
+					<div>
+						<input type="hidden" id='db_washer' value="{{rental_object.appliances.washer}}">
+						<label><input type="radio" id="washerNo" name="washer" value="0">Нет</label>
+						<label><input type="radio" id="washerYes" name="washer" value="1">Есть</label>							
+					</div>
+
+					<div class='item_text'>Телевизор</div> 
+					<div>
+						<input type="hidden" id='db_television' value="{{rental_object.appliances.television}}">
+						<label><input type="radio" id="televisionNo" name="television" value="0">Нет</label>
+						<label><input type="radio" id="televisionYes" name="television" value="1">Есть</label>							
+					</div>
+
+					<div class='item_text'>Пылесос</div> 
+					<div>
+						<input type="hidden" id='db_vacuum' value="{{rental_object.appliances.vacuum}}">
+						<label><input type="radio" id="vacuumNo" name="vacuum" value="0">Нет</label>
+						<label><input type="radio" id="vacuumYes" name="vacuum" value="1">Есть</label>							
+					</div>
+
+					<div class='item_text'>Электрический чайник</div> 
+					<div>
+						<input type="hidden" id='db_teapot' value="{{rental_object.appliances.teapot}}">
+						<label><input type="radio" id="teapotNo" name="teapot" value="0">Нет</label>
+						<label><input type="radio" id="teapotYes" name="teapot" value="1">Есть</label>							
+					</div>
+
+					<div class='item_text'>Утюг</div> 
+					<div>
+						<input type="hidden" id='db_iron' value="{{rental_object.appliances.iron}}">
+						<label><input type="radio" id="ironNo" name="iron" value="0">Нет</label>
+						<label><input type="radio" id="ironYes" name="iron" value="1">Есть</label>							
+					</div>
+
+					<div class='item_text'>Микроволновая печь</div> 
+					<div>
+						<input type="hidden" id='db_microwave' value="{{rental_object.appliances.microwave}}">
+						<label><input type="radio" id="microwaveNo" name="microwave" value="0">Нет</label>
+						<label><input type="radio" id="microwaveYes" name="microwave" value="1">Есть</label>							
+					</div>
+				</div>
+				<div class='form_items'>
+					<div></div> 
+					<div class='item_button'><input type='SUBMIT' class='save_location_data' value='Сохранить'></div>
+				</div>
+			</form>
+		</div>
+	</div>
+
+
+	<!-- special content: -->
+	<div id="special" class="tabcontent">
+		<div class='form_wrapper'>
+			<form method='POST' action="{{url_for('edit_rental_object', rental_object_id=rental_object.id)}}">
+			<input type="hidden" value="special_tab" name='source'/>		
+				{% if rental_object.type == 'комната' %}
+						<div class="form_items">
+							<div class='item_text'>Общая площадь квартиры</div> 				
+							<div><input type="text" class='input_text' name="total_area" value="{{rental_object.total_area}}"></div>
+
+							<div class='item_text'>Количество комнат</div> 
+							<div><input type="number" class='input_text' name="rooms_number" value="{{rental_object.rooms_number}}"></div>
+						</div>
+						<div class='form_items'>
+							<div></div> 
+							<div class='item_button'><input type='SUBMIT' class='save_special_data' value='Сохранить'></div>
+						</div>
+				{% elif rental_object.type == 'квартира' %}
+					Нет специальных данных для данного типа объекта
+				{% elif rental_object.type == 'дом' %}
+					Нет специальных данных для данного типа объекта
+				{% endif %}
+			</form>
+		</div>
+	</div>
+
+
+	<!-- things content: -->
+	<div id="things" class="tabcontent">
+		<div class='form_wrapper'>
+			<button id='add_thing_btn'>+add</button>
+			<form method='POST' action="{{url_for('edit_rental_object', rental_object_id=rental_object.id)}}">
+				<input type="hidden" value="things_tab" name='source'/>
+				<input type="hidden" id='things_id_list' name ='things_id_list' value="{{things_id_list}}"/>
+				<input type="hidden" id='const_things_id_list' value="{{things_id_list}}"/>	
+				<table id='things_table'>
+					<tr>
+						<th class='col1'>№</th>
+						<th class='col2'>Наименование</th>
+						<th class='col3'>Кол-во</th>
+						<th class='col4'>Стоимость</th>
+						<th class='col5'><div class='btn' onclick="delAllThings()">X</div></th></tr>
+					{% for thing in rental_object.things %}
+					<tr class='thing_row tr{{thing.id}}'>
+						<td><div><input type="number" class='input_text' name="number_{{thing.id}}" value="{{thing.thing_number}}" required></div></td>
+						<td><div><input type="text" class='input_text' name="name_{{thing.id}}" value="{{thing.thing_name}}" required></div></td>
+						<td><div><input type="number" class='input_text' name="amount_{{thing.id}}" value="{{thing.amount}}" required></div></td>
+						<td><div><input type="number" step="0.01" class='input_text' name="cost_{{thing.id}}" value="{{thing.cost}}" required></div></td>
+						<td><div class='btn' onclick="delThing('{{thing.id}}')"> X </div></td>
+					</tr>
+					{% endfor %}
+				</table>			
+				<div class='form_items'>
+					<div></div> 
+					<div class='item_button'><input type='SUBMIT' class='save_things_data' value='Сохранить'></div>
+				</div>
+			</form>
+		</div>
+	</div>
+
+
+
+	<!-- costs content: -->
+	<div id="costs" class="tabcontent">
+		<div class='form_wrapper'>
+			<button id='add_cost_btn'>+add</button>
+			<form method='POST' action="{{url_for('edit_rental_object', rental_object_id=rental_object.id)}}">
+				<input type="hidden" value="costs_tab" name='source'/>
+				
+
+				<!-- all costs id -->
+				<input type="hidden" id='all_costs_id' name ='all_costs_id' value="{{costs_id}}"/>
+
+				<!-- database costs id -->
+				<input type="hidden" id='db_costs_id' name ='db_costs_id' value="{{costs_id}}"/>	
+				<!-- added costs id -->
+				<input type="hidden" id='added_costs_id' name ='added_costs_id' value="[]"/>
+
+				<!-- deleted cost id -->
+				<input type="hidden" id='del_cost_id' name ='del_cost_id' value="[]"/>
+
+
+
+
+
+				<table id='costs_table'>
+					<tr>
+						<th class='col1'>Статья расхода</th>
+						<th class='col2'>Плательщик</th>
+						<tr class='col3'></tr>
+					</tr>
+					{% for cost in rental_object.costs %}
+					<tr class='cost_row tr{{cost.id}}'>
+						<td><div><input type=text class='input_text' name="name_{{cost.id}}" value="{{cost.name}}" required></div></td>
+						<td>
+							<div>
+								<input type="hidden" id='db_is_payer_landlord' value="{{cost.is_payer_landlord}}">
+								{% if cost.is_payer_landlord == 0 %}
+									<label><input type="radio" name="is_payer_landlord_{{cost.id}}" value="0" checked>Наниматель</label>
+									<label><input type="radio" name="is_payer_landlord_{{cost.id}}" value="1">Наймодетель</label>	
+								{% elif cost.is_payer_landlord == 1 %}
+									<label><input type="radio" name="is_payer_landlord_{{cost.id}}"value="0">Наниматель</label>
+									<label><input type="radio" name="is_payer_landlord_{{cost.id}}" value="1" checked>Наймодетель</label>		
+								{% endif %}					
+							</div>
+						</td>
+						<td><div class='btn' onclick="delCost('{{cost.id}}')"> X </div></td>
+					</tr>
+					{% endfor %}
+				</table>			
+				<div class='form_items'>
+					<div></div> 
+					<div class='item_button'><input type='SUBMIT' class='save_costs_data' value='Сохранить'></div>
+				</div>
+			</form>
+		</div>
+	</div>
+
+</div>
+
+
+
+
+{% endblock %}
