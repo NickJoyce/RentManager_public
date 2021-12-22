@@ -43,6 +43,9 @@ class Tenant(User):
 		super().__init__(user_id, name, phone, email, user_type)
 		self.tenant_id = tenant_id
 
+	def __repr__(self):
+		return f'({self.user_id}, {self.name}, {self.phone}, {self.email}, {self.tenant_id}, {self.user_type})'
+
 
 
 class Agent(User):
@@ -50,7 +53,8 @@ class Agent(User):
 		super().__init__(user_id, name, phone, email, user_type)
 		self.agent_id = agent_id
 
-
+	def __repr__(self):
+		return f'({self.user_id}, {self.name}, {self.phone}, {self.email}, {self.agent_id}, {self.user_type})'
 
 
 

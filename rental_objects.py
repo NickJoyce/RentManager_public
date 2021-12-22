@@ -39,6 +39,9 @@ class RentalObject:
 		self.things = None # список экземпляров класса Thing - список вещей внутри объекта
 
 
+	def __repr__(self):
+			return f'({self.id }, {self.type}, {self.name})'
+
 class Room(RentalObject):
 	def __init__(self, rental_object_id, type_, name, total_area, rooms_number):
 		super().__init__(rental_object_id, type_, name)

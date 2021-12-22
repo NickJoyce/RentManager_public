@@ -1,0 +1,204 @@
+{% extends 'index_landlord.html' %} <!-- Директива extends задает разметку базового шаблона -->
+
+{% block breadcrumbs %} 
+Главная: наймодатель -> Договоры -> Договор №{{rental_agreement.agreement_number}}
+{% endblock %}
+
+{% block main_content %} 
+<!-- мгновенные сообщения -->
+{% for cat, msg in get_flashed_messages(True) %}
+<div class='flash {{cat}}'>{{msg}}</div>
+{% endfor %}
+
+<!-- Метки выполнения js -->
+<input type="hidden" id='tab_page'/>
+
+<div class='details_area_wrapper'>
+	<!-- Tab links -->
+	<div class="tab">
+	  <button class="tablinks" onclick="openData(event, 'agreement')" id="info_button">Договор</button>
+	  <button class="tablinks" onclick="openData(event, 'things')" id="things_button">Опись имущества</button>
+	  <button class="tablinks" onclick="openData(event, 'move_in')" id="move_in_button">Акт сдачи-приемки</button>
+	  <button class="tablinks" onclick="openData(event, 'move_out')" id="move_out_button">Акт возврата</button>
+	  <button class="tablinks" onclick="openData(event, 'termination')" id="termination_button">Соглашение о расторжении</button>
+	  <button class="tablinks" onclick="openData(event, 'renewal')" id="renewal_button">Соглашение о продлении</button>
+	</div>
+
+	<!-- TAB CONTENT -->
+	<!-- info agreement: -->
+	<div id="agreement" class="tabcontent">
+		<div class='form_wrapper'>
+			<input type="hidden" value="info_tab" name='source'/>
+			<h4>Договор</h4>
+			<div class="form_items">
+				<div class='item_text'>id договора</div> 
+				<div>{{rental_agreement.id}}</div>
+
+				<div class='item_text'>Номер договора</div> 
+				<div>{{rental_agreement.agreement_number}}</div>
+
+				<div class='item_text'>Статус</div> 
+				<div>{{rental_agreement.status}}</div>						
+			</div>
+
+			<h4>Объект аренды</h4>
+			<div class="form_items">
+				<div class='item_text'>id объекта аренды</div> 
+				<div>{{ rental_agreement.rental_object.id  }}</div>
+
+				<div class='item_text'>Тип</div> 
+				<div>{{ rental_agreement.rental_object.type }}</div>
+
+				<div class='item_text'>Адрес</div> 
+				<div>{{ rental_agreement.rental_object.location.address }}</div>	
+
+				<div class='item_text'>Документ-основание</div> 
+				<div> {{ rental_agreement.rental_object.general.title_deed }}</div>						
+
+			</div>
+
+			<h4>Наймодатель</h4>
+			<div class="form_items">				
+				<div class='item_text'>id наймодателя</div> 
+				<div>{{ rental_agreement.landlord.landlord_id  }}</div>
+
+				<div class='item_text'>Полное имя</div> 
+				<div>{{ rental_agreement.landlord.passport.last_name }} 
+					 {{ rental_agreement.landlord.passport.first_name }}
+					 {{ rental_agreement.landlord.passport.patronymic }}</div>
+
+				<div class='item_text'>Телефон</div> 
+				<div>{{ rental_agreement.landlord.phone }}</div>
+
+				<div class='item_text'>Email</div> 
+				<div>{{ rental_agreement.landlord.email }}</div>
+			</div>
+
+			<h4>Наниматель</h4>
+			<div class="form_items">				
+				<div class='item_text'>id нанимателя</div> 
+				<div>{{ rental_agreement.tenant.tenant_id  }}</div>
+
+				<div class='item_text'>Полное имя</div> 
+				<div>{{ rental_agreement.tenant.passport.last_name }} 
+					 {{ rental_agreement.tenant.passport.first_name }}
+					 {{ rental_agreement.tenant.passport.patronymic }}</div>
+
+				<div class='item_text'>Телефон</div> 
+				<div>{{ rental_agreement.tenant.phone }}</div>
+
+				<div class='item_text'>Email</div> 
+				<div>{{ rental_agreement.tenant.email }}</div>
+			</div>
+
+			<h4>Агент</h4>
+			<div class="form_items">				
+				<div class='item_text'>id агента</div> 
+				<div>{{ rental_agreement.agent.agent_id  }}</div>
+
+				<div class='item_text'>Полное имя</div> 
+				<div>{{ rental_agreement.agent.passport.last_name }} 
+					 {{ rental_agreement.agent.passport.first_name }}
+					 {{ rental_agreement.agent.passport.patronymic }}</div>
+
+				<div class='item_text'>Телефон</div> 
+				<div>{{ rental_agreement.agent.phone }}</div>
+
+				<div class='item_text'>Email</div> 
+				<div>{{ rental_agreement.agent.email }}</div>
+			</div>
+			<h4>Условия аренды</h4>
+
+			<div class="form_items">				
+				<div class='item_text'>Начало действия</div> 
+				<div>{{ rental_agreement.conditions.start_of_term }}</div>
+
+				<div class='item_text'>Окончание действия</div> 
+				<div>{{ rental_agreement.conditions.end_of_term }}</div>
+
+				<div class='item_text'>Плата за найм, руб./мес.</div> 
+				<div>{{ rental_agreement.conditions.rental_rate }}</div>
+
+				<div class='item_text'>Предоплата, %</div> 
+				<div>{{ rental_agreement.conditions.prepayment }}</div>
+
+				<div class='item_text'>Страховая залоговая сумма, руб.</div> 
+				<div>{{ rental_agreement.conditions.deposit }}</div>
+
+				<div class='item_text'>Неустойка за день просрочки, %</div> 
+				<div>{{ rental_agreement.conditions.late_fee }}</div>
+
+				<div class='item_text'>День оплаты</div> 
+				<div>{{ rental_agreement.conditions.payment_day }}</div>
+
+				<div class='item_text'>Стоимость клининга</div> 
+				<div>{{ rental_agreement.conditions.cleaning_cost }}</div>
+
+			</div>
+
+			<h4>Расходы на содержание</h4>
+
+			<h4>Опись имущества</h4>
+
+			<h4>Сдача-приемка</h4>
+
+			<div class="form_items">				
+				<div class='item_text'>Кол-во комплектов ключей</div> 
+				<div>{{ rental_agreement.move_in.number_of_sets_of_keys  }}</div>
+
+				<div class='item_text'>Количество ключей в комплекте</div> 
+				<div>{{ rental_agreement.move_in.number_of_keys_in_set  }}</div>
+
+				<div class='item_text'>Замечания (жилое помещение)</div> 
+				<div>{{ rental_agreement.move_in.rental_object_comment  }}</div>
+
+				<div class='item_text'>Замечания (имущество в жп)</div> 
+				<div>{{ rental_agreement.move_in.things_comment  }}</div>
+			</div>
+			<h4>Возврат</h4>
+			<div class="form_items">				
+				<div class='item_text'>Кол-во комплектов ключей</div> 
+				<div>{{ rental_agreement.move_out.number_of_sets_of_keys  }}</div>
+
+				<div class='item_text'>Количество ключей в комплекте</div> 
+				<div>{{ rental_agreement.move_out.number_of_keys_in_set  }}</div>
+
+				<div class='item_text'>Замечания (жилое помещение)</div> 
+				<div>{{ rental_agreement.move_out.rental_object_comment  }}</div>
+
+				<div class='item_text'>Замечания (имущество в жп)</div> 
+				<div>{{ rental_agreement.move_out.things_comment  }}</div>
+
+				<div class='item_text'>Оценка ущерба</div> 
+				<div>{{ rental_agreement.move_out.damage_cost }}</div>
+
+				<div class='item_text'>Необходимость клининга</div> 
+				<div>{{ rental_agreement.move_out.cleaning }}</div>
+
+				<div class='item_text'>Долги нанимателя по договору</div> 
+				<div>{{ rental_agreement.move_out.rental_agreeement_debts }}</div>
+
+				<div class='item_text'>Возврат страховой залоговой суммы</div> 
+				<div>{{ rental_agreement.move_out.deposit_refund }}</div>
+
+				<div class='item_text'>Возврат предоплаты</div> 
+				<div>{{ rental_agreement.move_out.prepayment_refund }}</div>
+			</div>
+			<h4>Досрочное расторжение</h4>
+			<div class="form_items">
+				<div class='item_text'>Дата расторжения</div> 
+				<div>{{ rental_agreement.termination.end_of_term }}</div>
+			</div>	
+			<h4>Продление</h4>
+			<div class="form_items">
+				<div class='item_text'>Договор продлен до:</div> 
+				<div>{{ rental_agreement.renewal.last_end_of_term }}</div>
+			</div>	
+		</div>
+	</div>
+
+
+
+
+</div>
+{% endblock %}

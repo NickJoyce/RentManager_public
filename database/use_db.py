@@ -687,6 +687,21 @@ class RentalAgreementDD:
 																			REFERENCES rental_agreements(id)
 																			ON DELETE CASCADE
 															 			) ENGINE = InnoDB""" )
+
+
+			# ra_costs - фиксированные данные о расходах на содержание объекта аренды 
+
+			cursor.execute("""CREATE TABLE IF NOT EXISTS ra_costs (	id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+																	rental_agreement_id INT,
+																	name VARCHAR(255) DEFAULT '',
+																	is_payer_landlord BOOL DEFAULT 0,
+															  		FOREIGN KEY(rental_agreement_id)
+																		REFERENCES rental_agreements(id)
+																		ON DELETE CASCADE
+															 		) ENGINE = InnoDB""" )
+
+
+
 			# ra_landlord - фиксированные данные наймодателя в договоре
 			сursor.execute("""CREATE TABLE IF NOT EXISTS ra_landlord (rental_agreement_id INT PRIMARY KEY NOT NULL,
 																	  landlord_id INT,

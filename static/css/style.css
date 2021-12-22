@@ -392,6 +392,60 @@ align-self: center;
 
 
 
+/* ------------------------- RENTAL AGREEMENT  MANAGEMENT  ------------------------- */
+/*RENTAL AGREEMENT VIEW*/
+.ra_wrap {
+width: 96%;
+margin: 30px auto;
+}
+
+.ra_tbl {
+border: 0;
+font-size: 12px;
+}
+/* круг */
+.ra_tbl .col1 {width: 3%; text-align: center;} 
+/* номер договора */
+.ra_tbl .col2 {width: 7%; text-align: center;}
+/* объект аренды */
+.ra_tbl .col3 {width: 15%;}
+/* наниматель */
+.ra_tbl .col4 {width: 15%;}
+/* агент */
+.ra_tbl .col5 {width: 15%;}
+/* статус */
+.ra_tbl .col6 {width: 6%; text-align: center;}
+/* дней до окончасния  */
+.ra_tbl .col7 {width: 6%; text-align: center;}
+/* документы */
+.ra_tbl .col8 {width: 8%; text-align: center;}
+/* завершить */
+.ra_tbl .col9 {width: 8%; text-align: center;}
+/* расторгнуть */
+.ra_tbl .col10 {width: 8%; text-align: center;}
+/* продлить */
+.ra_tbl .col11 {width: 8%; text-align: center;}
+/* удалить */
+.ra_tbl .col12 {width: 3%; text-align: center;}
+
+.circle {
+border-radius: 50%;
+display:inline-block;
+width: 10px;
+height: 10px;
+background: #FFFFFF;
+border: 1px solid grey;
+}
+
+/*ADD RENTAL AGREEMENT*/
+.add_ra_comment {
+  padding-left: 20px;
+}
+
+
+
+
+
 
 
 
@@ -449,11 +503,11 @@ background-color: #ffffff;
 border: none;
 }
 
-.col1 {width: 13%;}
-.col2 {width: 50%;}
-.col3 {width: 13%;}
-.col4 {width: 19%;}
-.col5 {width: 5%;}
+#things_table .col1 {width: 13%;}
+#things_table .col2 {width: 50%;}
+#things_table .col3 {width: 13%;}
+#things_table .col4 {width: 19%;}
+#things_table .col5 {width: 5%;}
 
 /* ------------------------- COSTA TAB  ------------------------- */
 #costs_table {

@@ -5,26 +5,43 @@
 {% endblock %}
 
 {% block main_content %} 
-	<div class='any_rental_objects'>
-		<form method='POST' action="{{url_for('add_rental_agreement')}}">
-			<input type="hidden" value="{{landlord_id}}" name='landlord_id'/>
-			<button type="SUBMIT">+ add rental agreement</button>
-		</form>
+	<div class='ra_wrap'>
+		<button onclick="document.location='{{url_for('add_rental_agreement')}}'">Заключить новый договор</button>
 
 
-		<table>
-			<tr><th>Номер договора</th><th>Объект аренды</th><th>Наниматель</th><th>Агент</th><th>Статус</th><th></th><th></th></tr>
+
+		<table class='ra_tbl'>
+			<tr>
+				<th class='col1'><div class='circle'> </div></th>  <!-- Индикатор окончания -->
+				<th class='col2'>Номер договора</th>
+				<th class='col3'>Объект аренды</th>
+				<th class='col4'>Наниматель</th>
+				<th class='col5'>Агент</th>
+				<th class='col6'>Статус</th>
+				<th class='col7'>Дней до окончания</th>
+				<th class='col8'></th > <!-- кнопка Документы -->
+				<th class='col9'></th > <!-- кнопка Завершить -->
+				<th class='col10'></th > <!-- кнопка Расторгнуть -->
+				<th class='col11'></th > <!-- кнопка Продлить -->
+				<th class='col12'></th></tr> <!-- кнопка Удалить -->
 			{% for rental_agreement in rental_agreements %}
 				<tr>					
-					<td>{{rental_agreement.agreement_number}}</td>
-					<td>{{rental_agreement.rental_object.name}}</td>
-					<td>{{rental_agreement.tenant.name}}</td>
-					<td>{{rental_agreement.agent.name}}</td>
-					<td>{{rental_agreement.status}}</td>
-					<td>
-						<button onclick="document.location='{{url_for('edit_rental_agreement', rental_agreement_id=rental_agreement.id)}}'">...</button>
+					<td class='col1'></td>
+					<td class='col2'>{{ rental_agreement.agreement_number }}</td>
+					<td class='col3'></td>
+					<td class='col4'></td>
+					<td class='col5'></td>
+					<td class='col6'>{{ rental_agreement.status }}</td>
+					<td class='col7'></td>
+					<td class='col8'>
+						<button onclick="document.location='{{url_for('rental_agreement_documents', rental_agreement_id=rental_agreement.id)}}'">Документы</button>
 					</td>
-					<td>
+					<td class='col9'>
+						<button>Завершить</button>
+					</td>
+					<td class='col10'><button>Расторгнуть</button></td>
+					<td class='col11'><button>Продлить</button></td>
+					<td class='col12'>
 						<form method='POST' action="{{url_for('delete_rental_agreement')}}">
 							<input type="hidden" value="{{rental_agreement.id}}" name='rental_agreement_id'/>
 							<button class='delete_button'>x</button>

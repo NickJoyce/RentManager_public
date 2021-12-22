@@ -1,0 +1,140 @@
+{% extends 'index_landlord.html' %} 
+
+{% block breadcrumbs %} 
+Главная: наймодатель -> Договоры -> Заключение нового договора найма
+{% endblock %}
+
+{% block main_content %} 
+	<!-- мгновенные сообщения -->
+	{% for cat, msg in get_flashed_messages(True) %}
+	<div class='flash {{cat}}'>{{msg}}</div>
+	{% endfor %}
+
+<!-- Метки выполнения js -->
+<input type="hidden" id='tab_page'/>
+
+<div class='details_area_wrapper'>
+	<!-- Tab links -->
+	<div class="tab">
+	  <button class="tablinks" onclick="openData(event, 'conclusion')" id="conclude_button">{{ the_title }}</button>
+	</div>
+
+	<!-- TAB CONTENT -->
+	<!-- info cconclusion: -->
+	<div id="conclusion" class="tabcontent">
+		<div class='form_wrapper'>
+			<form method='POST' action="{{url_for('add_rental_agreement')}}">
+
+				<input type="hidden" value="{{ landlord_id }}" name='landlord_id'/>
+				<h4>Объект аренды</h4>
+				<div class="form_items">
+					<div class='item_text'>Объект аренды</div> 
+					<div>
+						<select name="rental_object_id" required>
+							<option disabled selected value>--выберите объект аренды--</option>
+							{% for rental_object in rental_objects %}
+  								<option value="{{ rental_object.id }}">{{ rental_object.name }}</option>
+  							{% endfor %}
+						</select>
+					</div>						
+				</div>
+
+
+				<h4>Участники договора</h4>
+				<div class="form_items">
+					<div class='item_text'>Наймодатель</div> 
+					<div>{{ landlord }}</div>						
+
+
+
+					<div class='item_text'>Наниматель</div> 
+					<div>
+						<select  name="tenant_id" required>
+							<option disabled selected value>--выберите нанимателя--</option>
+							{% for tenant in tenants %}
+  								<option value="{{ tenant.id }}">{{ tenant.name }}</option>
+  							{% endfor %}
+						</select>
+					</div>						
+
+
+
+					<div class='item_text'>Агент</div> 
+					<div>
+						<select name="agent_id">
+							<option selected value='0'>--выберите агента--</option>
+							{% for agent in agents %}
+  								<option value="{{ agent.id }}">{{ agent.name }}</option>
+  							{% endfor %}
+						</select>
+					</div>						
+				</div>
+
+				<h4>Условия договора</h4>
+				<div class="form_items">
+					<div class='item_text'>Начало действия</div> 
+					<div><input type='DATE'  class='item_input' name = "start_of_term"></div>	
+
+					<div class='item_text'>Окончание действия</div> 
+					<div><input type='DATE'  class='item_input' name = "end_of_term"></div>	
+
+					<div class='item_text'>Плата за найм, руб./мес.</div> 
+					<div><input type='TEXT' autocomplete="off"  class='item_input' name = "rental_rate"></div>	
+
+					<div class='item_text'>Предоплата, %</div> 
+					<div><input type='TEXT' autocomplete="off"  class='item_input' name = "prepayment" ></div>	
+
+					<div class='item_text'>Страховая залоговая сумма, руб.</div> 
+					<div><input type='TEXT' autocomplete="off"  class='item_input' name = "deposit" ></div>	
+
+					<div class='item_text'>Неустойка за день просрочки, %</div> 
+					<div><input type='TEXT' autocomplete="off"  class='item_input' name = "late_fee" ></div>	
+
+					<div class='item_text'>День оплаты</div> 
+					<div><input type='TEXT' autocomplete="off"  class='item_input' name = "payment_day" ></div>	
+
+					<div class='item_text'>Стоимость клининга</div> 
+					<div><input type='TEXT' autocomplete="off" class='item_input' name = "cleaning_cost" ></div>
+				</div>
+				
+				<h4>Расходы на содержание</h4>
+				<div class='add_ra_comment'>Редактирование Расходов на содержание,<br>
+				для добавляемого объекта аренды, производится <br>
+				до заключения договора в разделе: Объекты аренды > Расходы</div>
+
+				
+				<h4>Опись имущества</h4>
+				<div class='add_ra_comment'>Редактирование Описи имущества,<br>
+				для добавляемого объекта аренды, производится<br> 
+				до заключения договора в разделе: Объекты аренды > Вещи</div>
+
+
+
+
+				<h4>Акт сдачи-приемки</h4>
+				<div class="form_items">
+					<div class='item_text'>Кол-во комплектов ключей</div> 
+					<div><input type='NUMBER' autocomplete="off" class='item_input' name ="number_of_sets_of_keys"></div>	
+
+					<div class='item_text'>Количество ключей в комплекте</div> 
+					<div><input type='NUMBER' autocomplete="off" class='item_input' name = "number_of_keys_in_set"></div>	
+
+					<div class='item_text'>Замечания (жилое помещение)</div> 
+					<div><textarea name="rental_object_comment"></textarea></div>	
+
+					<div class='item_text'>Замечания (имущество в жп)</div> 
+					<div><textarea name="things_comment"></textarea></div>		
+				</div>
+
+
+				<div class='form_items'>
+					<div></div> 
+					<div class='item_button'><input value='Заключить договор' type='SUBMIT'></div>
+				</div>
+			</form>
+		</div>
+	</div>
+
+</div>
+
+{% endblock %}
