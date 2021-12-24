@@ -26,7 +26,7 @@ from rental_object_data import General, ObjectData, Building, Location, Applianc
 
 from rental_agreement import RentalAgreement # договор аренд
 from rental_agreement_conditions import Conditions# условия аренды, дополнительны платежи
-from rental_agreement_docs import MoveIn, MoveOut, Termination, Renewal
+from rental_agreement_data import RA_RentalObject, RA_Cost, RA_Thing, RA_Landlord, RA_Tenant, RA_Agent, MoveIn, MoveOut, Termination, Renewal
 
 
 # ВЗАИМОДЕЙСТВИЕ С БД
@@ -807,8 +807,28 @@ def landlord_rental_agreements() -> 'html':
 
 	# получаем данные договоров аренды для данного наймодателя 
 	rental_agreements = [] 
-	for data in db.get_rental_agreement_data_of_landlord(session['landlord_id']):
-		rental_agreements.append(RentalAgreement(*data))
+	for ra_data in db.get_rental_agreement_data_of_landlord(session['landlord_id']):
+		rental_agreement = RentalAgreement(*ra_data)
+
+		# подгружаем данные объекта аренды текущего договора
+		ra_rental_object_data = db.get_ra_rental_object_data(rental_agreement.id)
+		rental_agreement.rental_object = RA_RentalObject(rental_agreement.id, *ra_rental_object_data)
+
+		# подгружаем данные нанимателя текущего договора
+		ra_tenant_data = db.get_ra_tenant_data(rental_agreement.id)
+		rental_agreement.tenant = RA_Tenant(rental_agreement.id, *ra_tenant_data)
+
+		# подгружаем данные агента текущего договора
+		try:
+			ra_agent_data = db.get_ra_agent_data(rental_agreement.id)
+			rental_agreement.agent = RA_Agent(rental_agreement.id, *ra_agent_data)
+		except:
+			pass
+
+		# подгружаем данные условий текущего договора 
+		rental_agreement.conditions = Conditions(*db.get_ra_conditions_data(rental_agreement.id))
+
+		rental_agreements.append(rental_agreement)
 
 
 
@@ -833,55 +853,91 @@ def add_rental_agreement() -> 'html':
 		# обновляем данные в session
 		session['rental_agreements'] = db.get_rental_agreement_id_of_landlord(session['landlord_id'])
 		
-		rental_agreement_id = ... # ???
+		rental_agreement_id = db.get_last_agreement_id()
 
 		# создаем запись в таблице ra_rental_object (фиксированные данные объекта аренды в договоре)
 		# ra_rental_object: [ rental_agreement_id, rental_object_id, type, address, title_deed ]
 		# подгузка из rental_objects, ro_general, ro_location по rental_object_id
 		rental_object_id = request.form['rental_object_id']
+		rental_object = RentalObject(*db.get_rental_object_data(rental_object_id))
+		rental_object.location = Location(*db.get_location_data(rental_object_id))
+		rental_object.general = General(*db.get_general_data(rental_object_id))
+		db.insert_into_ra_rental_object(rental_agreement_id, rental_object_id, rental_object.type, rental_object.location.address,
+										rental_object.general.title_deed)
+
 
 		# создаем запись в таблице ra_landlord (фиксированные данные наймодателя в договоре)
 		# ra_landlord: [rental_agreement_id, landlord_id, last_name, first_name, patronymic, phone, 
 		# email, serie, pass_number, authority, registration]
 		# подгрузка из users, users_landlords, users_passport
 		landlord_id = request.form['landlord_id']
+		landlord = Landlord(*db.get_landlord_data_by_landlord_id(landlord_id))
+		landlord.passport = Passport(*db.get_passport_data(landlord.user_id))
+		db.insert_into_ra_landlord(rental_agreement_id, landlord_id, landlord.passport.last_name, landlord.passport.first_name, 
+								   landlord.passport.patronymic, landlord.phone, landlord.email, landlord.passport.serie, 
+								   landlord.passport.pass_number, landlord.passport.authority, landlord.passport.registration)
+
+
 
 		# создаем запись в таблице ra_tenant (фиксированные данные нанимателя в договоре)
 		# ra_landlord: [rental_agreement_id, tenant_id, last_name, first_name, patronymic, phone, 
 		# email, serie, pass_number, authority, registration]
 		# подгрузка из users, users_tenants, users_passport		
 		tenant_id = request.form['tenant_id']
+		tenant = Tenant(*db.get_tenant_data_by_tenant_id(tenant_id))
+		tenant.passport = Passport(*db.get_passport_data(tenant.user_id))
+		db.insert_into_ra_tenant(rental_agreement_id, tenant_id, tenant.passport.last_name, tenant.passport.first_name, 
+								 tenant.passport.patronymic, tenant.phone, tenant.email, tenant.passport.serie, 
+								 tenant.passport.pass_number, tenant.passport.authority, tenant.passport.registration)
+
+
 
 		# создаем запись в таблице ra_agent, если он добавлен (фиксированные данные агента в договоре)
 		# ra_landlord: [rental_agreement_id, agent_id, last_name, first_name, patronymic, phone, 
 		# email, serie, pass_number, authority, registration]
 		# подгрузка из users, users_agents, users_passport		
 		agent_id = request.form['agent_id']
+		if agent_id == '0':
+			pass
+		else:
+			agent = Agent(*db.get_agent_data_by_agent_id(agent_id))
+			agent.passport = Passport(*db.get_passport_data(agent.user_id))
+			db.insert_into_ra_agent(rental_agreement_id, agent_id, agent.passport.last_name, agent.passport.first_name, 
+									 agent.passport.patronymic, agent.phone, agent.email, agent.passport.serie, 
+									 agent.passport.pass_number, agent.passport.authority, agent.passport.registration)
+			
+
 
 		# создаем запись в таблице ra_conditions (данные условий договора аренды)
 		# ra_conditions: [rental_agreement_id, rental_rate, prepayment, deposit, late_fee, 
 		# start_of_term, end_of_term, payment_day, cleaning_cost]
-		...
-
+		db.insert_into_ra_conditions(rental_agreement_id, request.form['rental_rate'], request.form['prepayment'], 
+									 request.form['deposit'], request.form['late_fee'], request.form['start_of_term'], 
+									 request.form['end_of_term'], request.form['payment_day'], request.form['cleaning_cost'])
 		# создаем запись в таблице ra_things (фиксированные данные описи имущества в договоре)
 		# ra_things: [id, rental_agreement_id, thing_number, thing_name, amount, cost]
 		# подгрузка из ro_things по rental_object_id 
-		...
+		for thing_data in db.get_things(rental_object.id):
+			thing = Thing(*thing_data)
+			db.insert_into_ra_things(rental_agreement_id, thing.thing_number, thing.thing_name, thing.amount, thing.cost)
 
 		# создаем запись в таблице ra_costs (фиксированные данные расходов на содержание в договоре)
 		# ra_costs: [id, rental_agreement_id, name, is_payer_landlord]
 		# подгрузка из ro_costs по rental_object_id 
-		...
+		for cost_data in db.get_costs_data(rental_object.id):
+			cost = Cost(*cost_data)
+			db.insert_into_ra_costs(rental_agreement_id, cost.name, cost.is_payer_landlord)
 
 		# создаем запись в таблице ra_move_in (данные Акта сдачи-приемки)
 		# ra_move_in: [rental_agreement_id, number_of_sets_of_keys, number_of_keys_in_set, rental_object_comment, things_comment]
-		...
+		db.insert_into_move_in(rental_agreement_id, request.form['number_of_sets_of_keys'], 
+													request.form['number_of_keys_in_set'], 
+													request.form['rental_object_comment'], 
+													request.form['things_comment'])
 
 		return redirect(url_for('landlord_rental_agreements'))
 
 	else:
-
-
 
 		# Для select Объект аренды
 		rental_objects_query = db.get_rental_objects_data_of_landlord(session['landlord_id'])
@@ -901,10 +957,11 @@ def add_rental_agreement() -> 'html':
 		for agent in agents_query:
 			agents.append(Agent(*agent))
 
+		test = tenants
 
 	return render_template('add_rental_agreement.html', the_title=the_title, rental_objects=rental_objects, 
 														landlord=session['user_name'], tenants=tenants, agents=agents, 
-														landlord_id=session['landlord_id'])
+														landlord_id=session['landlord_id'], test=test)
 
 
 
@@ -940,62 +997,35 @@ def rental_agreement_documents(rental_agreement_id) -> 'html':
 			rental_agreement = RentalAgreement(*rental_agreement_data)
 
 			# ОБЪЕКТ АРЕНДЫ
-			ra_rental_object = db.get_ra_rental_object_data(rental_agreement_id)
+			rental_agreement.rental_object = RA_RentalObject(rental_agreement_id, *db.get_ra_rental_object_data(rental_agreement_id))
 
-			# создаем экземпляр класса Room, Flat или House внутри экземпляра класса RentalAgreement
-			# заполняем недостающие значения атрибутов заглушками (None)
-			rental_object_type = ra_rental_object[1]
-			if rental_object_type == 'комната':
-				rental_agreement.rental_object = Room(ra_rental_object[0], rental_object_type, None, None, None)
-			elif rental_object_type == 'квартира':
-				rental_agreement.rental_object = Flat(ra_rental_object[0], rental_object_type, None, None, None)
-			elif rental_object_type == 'дом':
-				rental_agreement.rental_object = House(ra_rental_object[0], rental_object_type, None, None, None)
+			# ОПИСЬ ИМУЩЕСТВА 
+			rental_agreement.things =  [RA_Thing(*thing) for thing in db.get_ra_things(rental_agreement_id)]
+			# RA_Thing()
 
-			# создаем экземпляр класса Location внутри созданного экземпляра Room, Flat или House
-			rental_agreement.rental_object.location = Location(*[None for i in range(0, 15)])
-			rental_agreement.rental_object.location.address = ra_rental_object[2]
 
-			# создаем экземпляр класса General внутри созданного экземпляра Room, Flat или House
-			# передаем значение последнего атрибута (title_deed)
-			rental_agreement.rental_object.general = General(None, None, ra_rental_object[3])
+			# ЗАТРАТЫ НА СОДЕРЖАНИЕ
+			rental_agreement.costs = [RA_Cost(*cost) for cost in db.get_ra_costs(rental_agreement_id)]	
+
 
 			# НАЙМОДАТЕЛЬ
 			# получаем данные наймодателя зафиксированные в договоре
-			ra_lanlord = db.get_ra_landlord_data(rental_agreement_id)
+			rental_agreement.lanlord = RA_Landlord(rental_agreement_id, *db.get_ra_landlord_data(rental_agreement_id))
 
-			# создаем экземпляр класса Landlord(user_id, name, phone, email, landlord_id, inn) внутри RentalAgreement
-			rental_agreement.landlord = Landlord(None, None, ra_lanlord[4], ra_lanlord[5], ra_lanlord[0], None)
-			# создаем экземпляр класса Passport внутри Landlord
-			# Passport(user_id, first_name, patronymic, last_name, serie, pass_number, authority, 
-			# department_code, date_of_issue, date_of_birth, place_of_birth, registration)
-			rental_agreement.landlord.passport = Passport(None, ra_lanlord[2], ra_lanlord[3], ra_lanlord[1], ra_lanlord[6], ra_lanlord[7],
-													ra_lanlord[8], None, None, None, None, ra_lanlord[9])
 
 
 			# НАНИМАТЕЛЬ
 			# получаем данные нанимателя зафиксированные в договоре
-			ra_tenant = db.get_ra_tenant_data(rental_agreement_id)
-			# создаем экземпляр класса Landlord(user_id, name, phone, email, landlord_id, inn) внутри RentalAgreement
-			rental_agreement.tenant = Tenant(None, None, ra_tenant[4], ra_tenant[5], ra_tenant[0], None)
-			# создаем экземпляр класса Passport внутри Landlord
-			# Passport(user_id, first_name, patronymic, last_name, serie, pass_number, authority, 
-			# department_code, date_of_issue, date_of_birth, place_of_birth, registration)
-			rental_agreement.tenant.passport = Passport(None, ra_tenant[2], ra_tenant[3], ra_tenant[1], ra_tenant[6], ra_tenant[7],
-													ra_tenant[8], None, None, None, None, ra_tenant[9])
+			rental_agreement.tenant = RA_Tenant(rental_agreement_id, *db.get_ra_tenant_data(rental_agreement_id))
+
 
 
 			# АГЕНТ
 			# получаем данные нанимателя зафиксированные в договоре
-			ra_agent = db.get_ra_agent_data(rental_agreement_id)
-			# создаем экземпляр класса Landlord(user_id, name, phone, email, landlord_id, inn) внутри RentalAgreement
-			rental_agreement.agent = Agent(None, None, ra_agent[4], ra_agent[5], ra_agent[0], None)
-			# создаем экземпляр класса Passport внутри Landlord
-			# Passport(user_id, first_name, patronymic, last_name, serie, pass_number, authority, 
-			# department_code, date_of_issue, date_of_birth, place_of_birth, registration)
-			rental_agreement.agent.passport = Passport(None, ra_agent[2], ra_agent[3], ra_agent[1], ra_agent[6], ra_agent[7],
-													ra_agent[8], None, None, None, None, ra_agent[9])
-
+			try:
+				rental_agreement.agent = RA_Agent(rental_agreement_id, *db.get_ra_agent_data(rental_agreement_id))
+			except:
+				pass
 
 			# УСЛОВИЯ ДОГОВОРА
 			# создаем экземпляр класса Conditions внутри RentalAgreement
@@ -1005,16 +1035,20 @@ def rental_agreement_documents(rental_agreement_id) -> 'html':
 			rental_agreement.move_in = MoveIn(*db.get_ra_move_in_data(rental_agreement_id))
 
 			# АКТ ВОЗВРАТА		
-			rental_agreement.move_out = MoveOut(*db.get_ra_move_out_data(rental_agreement_id))
+			try:
+				rental_agreement.move_out = MoveOut(*db.get_ra_move_out_data(rental_agreement_id))
+			except:
+				pass
 
-			# ДОСРОЧНОЕ РАСТОРЖЕНИЕ		
-			rental_agreement.termination = Termination(*db.get_ra_termination(rental_agreement_id))
-			if not rental_agreement.termination.end_of_term:
-				rental_agreement.termination.end_of_term = 'Договор не расторгался'
-
+			# ДОСРОЧНОЕ РАСТОРЖЕНИЕ
+			try:
+				rental_agreement.termination = Termination(*db.get_ra_termination(rental_agreement_id))
+			except:
+				pass
 
 			# ДОСРОЧНОЕ ПРОДЛЕНИЕ				
 			rental_agreement.renewal = Renewal(rental_agreement_id, db.get_ra_renewal(rental_agreement_id))
+			print(rental_agreement.renewal.ends_of_term)
 
 
 	else:

@@ -644,7 +644,9 @@ class RentalAgreementDD:
 
 			# ra_termination - Соглашение о досрочном расторжении (только одно для каждого договора)
 			сursor.execute("""CREATE TABLE IF NOT EXISTS ra_termination (rental_agreement_id INT PRIMARY KEY NOT NULL,
-																	 	 end_of_term DATE, 
+																		 notice_date DATE DEFAULT '2000-01-01',
+																	 	 end_of_term DATE DEFAULT '2000-01-01',
+																	 	 is_landlord_initiator BOOL,
 															  		 	 FOREIGN KEY (rental_agreement_id )
 																			 REFERENCES rental_agreements(id)
 																			 ON DELETE CASCADE,
@@ -1020,6 +1022,17 @@ class UserDM:
 							  WHERE u.id=%s""", (user_id,))
 			return cursor.fetchall()[0]
 
+	def get_landlord_data_by_landlord_id(self, landlord_id):
+		"""возвращает данные любого наймодателя безотносительно к администратору (класс Landlord) по landlord_id"""
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT u.id, u.name, u.phone, u.email, ul.id, ul.inn # u.type_id, ul.inn
+							  FROM users_landlords AS ul
+							  JOIN users AS u
+							  ON ul.user_id = u.id
+							  WHERE ul.id=%s""", (landlord_id,))
+			return cursor.fetchall()[0]
+
+
 
 
 	# FOR TENANTS DATA OF LADLORD OUTPUT
@@ -1056,6 +1069,15 @@ class UserDM:
 							  WHERE u.id=%s""", (user_id,))
 			return cursor.fetchall()[0]
 
+	def get_tenant_data_by_tenant_id(self, tenant_id):
+		"""возвращает данные любого нанимателя безотносительно к наймодателю (класс Tenant) по tenant_id"""
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT u.id, u.name, u.phone, u.email, ut.id
+							  FROM users_tenants AS ut
+							  JOIN users AS u
+							  ON ut.user_id=u.id
+							  WHERE ut.id=%s""", (tenant_id,))
+			return cursor.fetchall()[0]
 
 
 
@@ -1083,6 +1105,8 @@ class UserDM:
 							  WHERE uliai.landlord_id=%s""", (landlord_id,))
 			return cursor.fetchall()
 
+
+
 	def get_agent_data(self, user_id):
 		"""возвращает данные любого агента безотносительно к наймодателю (класс Landlord)"""
 		with self.context_manager(self.config) as cursor:
@@ -1091,6 +1115,16 @@ class UserDM:
 							  JOIN users_agents AS ua
 							  ON u.id=ua.user_id
 							  WHERE u.id=%s""", (user_id,))
+			return cursor.fetchall()[0]
+
+	def get_agent_data_by_agent_id(self, agent_id):
+		"""возвращает данные любого агента безотносительно к наймодателю (класс Landlord) по agent_id"""
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT u.id, u.name, u.phone, u.email, ua.id
+							  FROM users_agents AS ua
+							  JOIN users AS u
+							  ON ua.user_id=u.id
+							  WHERE ua.id=%s""", (agent_id,))
 			return cursor.fetchall()[0]
 
 
@@ -1516,7 +1550,14 @@ class RentalObgectDM:
 			cursor.execute("""DELETE FROM rental_objects WHERE id=%s""", (rental_object_id,))	
 
 
-	# 
+
+
+
+
+
+
+
+
 
 	# FOR RENATAL OBJECTS DATA OF LADLORD OUTPUT
 	def get_rental_object_id_of_landlord(self, landlord_id):
@@ -1585,6 +1626,25 @@ class RentalObgectDM:
 			return [i for i in cursor.fetchall()]
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	# GET RENTAL OBJECT DATA
+	def get_rental_object_data(self, rental_object_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT id, type_id, name FROM rental_objects WHERE id=%s""", (rental_object_id ,))
+			return cursor.fetchall()[0]
 
 
 
@@ -1796,7 +1856,7 @@ class RentalObgectDM:
 	def get_things(self, rental_object_id):
 		"""Возвращает данные о вещах в объекте"""
 		with self.context_manager(self.config) as cursor:
-			cursor.execute("""SELECT thing_number, thing_name, amount, cost
+			cursor.execute("""SELECT id, rental_object_id, thing_number, thing_name, amount, cost
 							  FROM ro_things
 							  WHERE rental_object_id=%s""", (rental_object_id,))
 			things = []
@@ -2098,8 +2158,79 @@ class RentalObgectDM:
 
 
 
-	# SET ATTRIBUTES [rental_objects]: name
 
+
+	# INSERT INTO ra_rental_object
+	def insert_into_ra_rental_object(self, rental_agreement_id, rental_object_id, type_, address, title_deed):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""INSERT INTO ra_rental_object(rental_agreement_id, rental_object_id, type, address, title_deed)
+							  VALUES (%s,%s,%s,%s,%s)""", (rental_agreement_id, rental_object_id, type_, address, title_deed))		
+
+	# INSERT INTO ra_landlord
+	def insert_into_ra_landlord(self,rental_agreement_id, landlord_id, last_name, first_name, patronymic, phone, 
+								email, serie, pass_number, authority, registration):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""INSERT INTO ra_landlord(rental_agreement_id, landlord_id, last_name, first_name, patronymic, phone, 
+												      email, serie, pass_number, authority, registration)
+							  VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", 
+							  (rental_agreement_id, landlord_id, last_name, first_name, patronymic, phone, 
+							   email, serie, pass_number, authority, registration))						
+	# INSERT INTO ra_tenant
+	def insert_into_ra_tenant(self, rental_agreement_id, tenant_id, last_name, first_name, patronymic, phone, 
+									email, serie, pass_number, authority, registration):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""INSERT INTO ra_tenant(rental_agreement_id, tenant_id, last_name, first_name, patronymic, phone, 
+												      email, serie, pass_number, authority, registration)
+							  VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", 
+							  (rental_agreement_id, tenant_id, last_name, first_name, patronymic, phone, 
+							   email, serie, pass_number, authority, registration))					
+
+	# INSERT INTO ra_agent
+	def insert_into_ra_agent(self, rental_agreement_id, agent_id, last_name, first_name, patronymic, phone, 
+									email, serie, pass_number, authority, registration):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""INSERT INTO ra_agent(rental_agreement_id, agent_id, last_name, first_name, patronymic, phone, 
+												      email, serie, pass_number, authority, registration)
+							  VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", 
+							  (rental_agreement_id, agent_id, last_name, first_name, patronymic, phone, 
+							   email, serie, pass_number, authority, registration))	
+
+	# INSERT INTO ra_conditions
+	def insert_into_ra_conditions(self, rental_agreement_id, rental_rate, prepayment, deposit, late_fee, 
+										start_of_term, end_of_term, payment_day, cleaning_cost):
+		with self.context_manager(self.config) as cursor:	
+			cursor.execute("""INSERT INTO ra_conditions(rental_agreement_id, rental_rate, prepayment, deposit, late_fee, 
+														start_of_term, end_of_term, payment_day, cleaning_cost)
+							  VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)""", 
+							  (rental_agreement_id, rental_rate, prepayment, deposit, late_fee, 
+							   start_of_term, end_of_term, payment_day, cleaning_cost))
+	
+	# INSERT INTO ra_things
+	def insert_into_ra_things(self, rental_agreement_id, thing_number, thing_name, amount, cost):
+		with self.context_manager(self.config) as cursor:	
+			cursor.execute("""INSERT INTO ra_things(rental_agreement_id, thing_number, thing_name, amount, cost)
+							  VALUES (%s,%s,%s,%s,%s)""", 
+							  (rental_agreement_id, thing_number, thing_name, amount, cost))		
+	# INSERT INTO ra_costs
+	def insert_into_ra_costs(self, rental_agreement_id, name, is_payer_landlord):
+		with self.context_manager(self.config) as cursor:	
+			cursor.execute("""INSERT INTO ra_costs(rental_agreement_id, name, is_payer_landlord)
+							  VALUES (%s,%s,%s)""", 
+							  (rental_agreement_id, name, is_payer_landlord))
+	
+	# INSERT INTO ra_move_in
+	def insert_into_move_in(self, rental_agreement_id, number_of_sets_of_keys, number_of_keys_in_set, 
+								  rental_object_comment, things_comment):
+
+		with self.context_manager(self.config) as cursor:	
+			cursor.execute("""INSERT INTO ra_move_in(rental_agreement_id, number_of_sets_of_keys, 
+										  number_of_keys_in_set, rental_object_comment, things_comment)
+							  VALUES (%s,%s,%s,%s,%s)""", 
+							  (rental_agreement_id, number_of_sets_of_keys, 
+							   number_of_keys_in_set, rental_object_comment, things_comment))
+
+
+	# SET ATTRIBUTES [rental_objects]: name
 	def set_rental_object_name(self, rental_object_id, value):
 		with self.context_manager(self.config) as cursor:
 			cursor.execute("""UPDATE rental_objects SET name=%s WHERE id=%s""", (value, rental_object_id,))
@@ -2449,35 +2580,24 @@ class RentalAgreementDM:
 			cursor.execute("""SELECT id FROM rental_agreements WHERE id=LAST_INSERT_ID()""") 
 			rental_agreement_id = cursor.fetchall()[0][0] 
 
-			# создаем таблицу c условиями аренды, связываем ее с договором
-			cursor.execute("""INSERT INTO ra_conditions(rental_agreement_id)
-							  VALUES(%s) """, (rental_agreement_id,))
-
-			# добавляем связь договора с наймодателем
+			# добавляем связь договора с наймодателем через таблицу users_landlord_id_rental_agreements_id
 			cursor.execute("""INSERT INTO users_landlord_id_rental_agreements_id(landlord_id, rental_agreement_id)
-							  VALUES (%s, %s)""", (landlord_id, rental_agreement_id))
+							  VALUES (%s, %s)""", (landlord_id, rental_agreement_id))			
 
-			# создаем таблицу Акта сдачи-приемки,связываем ее с договором
-			cursor.execute("""INSERT INTO ra_move_in (rental_agreement_id) 
-							  VALUES (%s)""", (rental_agreement_id,))
-
-			# создаем таблицу Акта возврата,связываем ее с договором
-			cursor.execute("""INSERT INTO ra_move_out (rental_agreement_id) 
-							  VALUES (%s)""", (rental_agreement_id,))
-
-			# cоздаем таблицу Соглашения о досрочном расторжении, связываем ее с договором
-			cursor.execute("""INSERT INTO ra_termination (rental_agreement_id) 
-							  VALUES (%s)""", (rental_agreement_id,))
-
-			# cоздаем таблицу Соглашения о продлении, связываем ее с договором
-			cursor.execute("""INSERT INTO ra_renewal (rental_agreement_id) 
-							  VALUES (%s)""", (rental_agreement_id,))
 
 
 	def delete_rental_agreement(self, rental_agreement_id):
 		"""удаление договора аренды"""
 		with self.context_manager(self.config) as cursor:
 			cursor.execute("""DELETE FROM rental_agreements WHERE id=%s""", (rental_agreement_id,))		
+
+
+
+
+
+
+
+
 
 
 	# FOR RENATAL OBJECTS DATA OF LADLORD OUTPUT
@@ -2522,6 +2642,10 @@ class RentalAgreementDM:
 			return cursor.fetchall()[0][0]
 
 
+	def get_last_agreement_id(self):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT max(id) FROM rental_agreements""")
+			return cursor.fetchall()[0][0]			
 
 
 	# GET RENTAL AGREEMENT DATA
@@ -2537,9 +2661,11 @@ class RentalAgreementDM:
 	# GET RENTAL OBJECT DATA (CURRENT RENATAL AGREEMENT)
 	def get_ra_rental_object_data(self, rental_agreement_id):
 		with self.context_manager(self.config) as cursor:
-			cursor.execute("""SELECT rental_object_id, type, address, title_deed
-							  FROM ra_rental_object 
-							  WHERE rental_agreement_id=%s""", (rental_agreement_id,))
+			cursor.execute("""SELECT rro.rental_object_id, rot.type, rro.address, rro.title_deed
+							  FROM ra_rental_object AS rro 
+							  JOIN rental_object_types AS rot
+							  ON rro.type=rot.id
+							  WHERE rro.rental_agreement_id=%s""", (rental_agreement_id,))
 			return cursor.fetchall()[0]
 
 	# GET LANDLORD DATA (CURRENT RENATAL AGREEMENT)
@@ -2597,7 +2723,7 @@ class RentalAgreementDM:
 	# GET TERMINATION DATA (CURRENT RENATAL AGREEMENT)
 	def get_ra_termination(self, rental_agreement_id):
 		with self.context_manager(self.config) as cursor:
-			cursor.execute("""SELECT rental_agreement_id, end_of_term
+			cursor.execute("""SELECT rental_agreement_id, notice_date, end_of_term, is_landlord_initiator
 							  FROM ra_termination
 							  WHERE rental_agreement_id=%s""", (rental_agreement_id,))
 			return cursor.fetchall()[0]
@@ -2608,7 +2734,36 @@ class RentalAgreementDM:
 			cursor.execute("""SELECT end_of_term
 							  FROM ra_renewal
 							  WHERE rental_agreement_id=%s""", (rental_agreement_id,))
+			res = []
+			for date in cursor.fetchall():
+				res.append(date)
+			return res
+
+
+	# GET THINGS DATA (CURRENT RENATAL AGREEMENT)
+	def get_ra_things(self, rental_agreement_id):
+		"""Возвращает данные о вещах в объекте"""
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT id, rental_agreement_id, thing_number, thing_name, amount, cost
+							  FROM ra_things
+							  WHERE rental_agreement_id=%s""", (rental_agreement_id,))
+			things = []
+			for thing in cursor.fetchall():
+				things.append([i for i in thing])
+			return things
+
+	# GET COSTS DATA (CURRENT RENATAL AGREEMENT)
+	def get_ra_costs(self, rental_agreement_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT id, rental_agreement_id, name, is_payer_landlord
+							  FROM ra_costs
+							  WHERE rental_agreement_id=%s""", (rental_agreement_id,))
 			return cursor.fetchall()
+
+
+
+
+
 
 
 
@@ -2640,10 +2795,10 @@ class RentalAgreementDM:
 			return cursor.fetchall()[0][0]		
 
 
-	# GET ATTRIBUTES [ra_general_conditions]: ['rental_rate', 'prepayment', 'deposit', 'late_fee', 'start_of_term', 'end_of_term', 'ayment_day']
+	# GET ATTRIBUTES [ra_conditions]: ['rental_rate', 'prepayment', 'deposit', 'late_fee', 'start_of_term', 'end_of_term', 'ayment_day']
 	def get_ra_general_conditions_rental_rate(self, rental_agreement_id):
 		with self.context_manager(self.config) as cursor:
-			cursor.execute("""SELECT rental_rate FROM ra_general_conditions WHERE rental_agreement_id=%s""", (rental_agreement_id,))
+			cursor.execute("""SELECT rental_rate FROM ra_conditions WHERE rental_agreement_id=%s""", (rental_agreement_id,))
 			return cursor.fetchall()[0][0]
 
 	def get_ra_general_conditions_prepayment(self, rental_agreement_id):

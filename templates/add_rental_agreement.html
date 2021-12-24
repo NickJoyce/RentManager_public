@@ -52,7 +52,7 @@
 						<select  name="tenant_id" required>
 							<option disabled selected value>--выберите нанимателя--</option>
 							{% for tenant in tenants %}
-  								<option value="{{ tenant.id }}">{{ tenant.name }}</option>
+  								<option value="{{ tenant.tenant_id }}">{{ tenant.name }}</option>
   							{% endfor %}
 						</select>
 					</div>						
@@ -64,7 +64,7 @@
 						<select name="agent_id">
 							<option selected value='0'>--выберите агента--</option>
 							{% for agent in agents %}
-  								<option value="{{ agent.id }}">{{ agent.name }}</option>
+  								<option value="{{ agent.agent_id }}">{{ agent.name }}</option>
   							{% endfor %}
 						</select>
 					</div>						

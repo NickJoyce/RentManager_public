@@ -3,7 +3,7 @@ from rental_objects import Room, Flat, House
 
 from rental_agreement_conditions import Conditions # условия аренды, дополнительны платежи
 
-from rental_agreement_docs import MoveIn, MoveOut, Termination, Renewal # акты и соглашения
+from rental_agreement_data import RA_RentalObject, RA_Cost, RA_Thing, RA_Landlord, RA_Tenant, RA_Agent, MoveIn, MoveOut, Termination, Renewal 
 
 
 class RentalAgreement:
@@ -15,18 +15,21 @@ class RentalAgreement:
 		self.status = status # статус договора ['черновик', 'заключен', 'досрочно расторгнут', 'завершен', 'продлен'] 
 		
 		# ОБЪЕКТ АРЕНДЫ
-		self.rental_object = None # экземпляр класса RentalObject
+		self.rental_object = None # экземпляр класса RA_RentalObject
 
 		# УЧАСТННИКИ ДОГОВОРА
-		self.landlord = None # экземпляр класса Landlord (наймодатель)
-		self.tenant = None # экземпляр класса Tenant (наниматель)		
-		self.agent = None # экземпляр класса Agent (агент)
+		self.landlord = None # экземпляр класса RA_Landlord (наймодатель)
+		self.tenant = None # экземпляр класса RA_Tenant (наниматель)		
+		self.agent = None # экземпляр класса RA_Agent (агент)
 
 		# УСЛОВИЯ АРЕНДЫ 
 		self.conditions = None # экземпляр класса Conditions 
 
 		# ОПИСЬ ИМУЩЕСТВА
-		self.things = None
+		self.things = None # список экземпляров класса RA_Thing
+
+		# РАСХОДЫ НА СОДЕРЖАНИЕ
+		self.costs = None # список экземпляров класса RA_Cost
 
 		# АКТ СДАЧИ-ПРИЕМКИ
 		self.move_in = None # экземпляр класса MoveIn 
@@ -38,7 +41,7 @@ class RentalAgreement:
 		self.termination = None # экземпляр класса Termination, список дат окончания срока действия договора (при расторжении)
 
 		# СОГЛАШЕНИЕ О ПРОДЛЕНИИ
-		self.renewal = None # экземпляр класса Renewal, список дат окончания срока действия договора (при продлении)
+		self.renewal = None # список экземпляров Renewal, список дат окончания срока действия договора (при продлении)
 
 
 		# self.rental_object_type = None # тип объекта аренды

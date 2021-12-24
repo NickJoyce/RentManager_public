@@ -1,3 +1,5 @@
+from datetime import date 
+
 class Conditions:
 	# УCЛОВИЯ АРЕНДЫ |T| rental_agreement> ra_general_conditions
 	def __init__(self, rental_agreement_id, rental_rate, prepayment, deposit, late_fee, start_of_term, end_of_term,
@@ -11,12 +13,33 @@ class Conditions:
 		self.end_of_term = end_of_term # конец периода аренды 
 		self.payment_day = payment_day # день оплаты
 		self.cleaning_cost = cleaning_cost # стоимость клининга
+		self.days_before_end_of_term_l = 30 # за сколько дней должен предложить наймодатель нанимателю что делать после истечения срока
+
+		self.days_before_early_termination_t = 30 # за сколько должен предупредить наниматель (досрочное расторжение)
+		self.days_before_early_termination_ll = 30 # за сколько должен предупредить наймодатель (досрочное расторжение)
+
+		self.et_fee_t = 10 # неустойка за досрочное расторжение, % от суммы месячного платежа (наниматель)
+		self.et_fee_ll = 10 # неустойка за досрочное расторжение, % от суммы месячного платежа (наймодатель)
+
+		self.et_wrong_notice_fee_t = 10 # неустойка за отсутствие уведомления о досрочном расторжение в оговоренные сроки (наниматель)
+		self.et_wrong_notice_et_fee_ll = 10 # неустойка за отсутствие уведомления о досрочном расторжение в оговоренные сроки (наймодатель)
+		self.days_left = self.get_days_left() # количество дней до прекращения срока действия
 
 
+	def get_days_left(self) -> int:
+		"""Возращает количество дней остающийся до окончания срока действия договора"""
+		res =  (self.end_of_term - date.today()).days + 1
+		if res > 0:
+			return res
+		else: 
+			return 0
 
 
 if __name__ == '__main__':
-	...
+	cond = Conditions(*[None for i in range(9)])
+	cond.end_of_term = date(2021, 12, 1)
+	print(cond.get_days_left())
+
 
 
 	# 	#____________________________________________setters and getters____________________________________________

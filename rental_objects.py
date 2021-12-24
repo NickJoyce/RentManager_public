@@ -35,8 +35,9 @@ class RentalObject:
 		self.building = None # экземпляр класса Building - информация об здании
 		self.location = None # экземпляр класса Location - локация объекта
 		self.appliances = None # экземпляр класса Appliances - информация бытовой технике
-		self.costs = None # экземпляр класса Costs - расходы на содержание объекта
 		self.things = None # список экземпляров класса Thing - список вещей внутри объекта
+		self.costs = None # список экземпляр класса Cost - расходы на содержание объекта
+
 
 
 	def __repr__(self):

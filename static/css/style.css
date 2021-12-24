@@ -437,6 +437,20 @@ background: #FFFFFF;
 border: 1px solid grey;
 }
 
+.red {background: red;}
+.yellow {background: yellow;}
+.grey {background: grey;}
+.green {background: green;}
+
+
+
+
+
+
+
+
+
+
 /*ADD RENTAL AGREEMENT*/
 .add_ra_comment {
   padding-left: 20px;
