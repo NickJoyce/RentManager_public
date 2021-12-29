@@ -7,11 +7,12 @@ from rental_agreement_data import RA_RentalObject, RA_Cost, RA_Thing, RA_Landlor
 
 
 class RentalAgreement:
-	def __init__(self, id_, agreement_number, status): 
+	def __init__(self, id_, agreement_number, date_of_conclusion, status): 
 				
 		# |T|> rental_agreement
 		self.id = id_# id договора
 		self.agreement_number = agreement_number # номер договора аренда
+		self.date_of_conclusion = date_of_conclusion # дата заключения договора
 		self.status = status # статус договора ['черновик', 'заключен', 'досрочно расторгнут', 'завершен', 'продлен'] 
 		
 		# ОБЪЕКТ АРЕНДЫ
@@ -41,7 +42,7 @@ class RentalAgreement:
 		self.termination = None # экземпляр класса Termination, список дат окончания срока действия договора (при расторжении)
 
 		# СОГЛАШЕНИЕ О ПРОДЛЕНИИ
-		self.renewal = None # список экземпляров Renewal, список дат окончания срока действия договора (при продлении)
+		self.renewal = None # список экземпляров Renewal, список дат заключения соглашения и  дат окончания срока действия договора (при продлении)
 
 
 		# self.rental_object_type = None # тип объекта аренды

@@ -404,29 +404,29 @@ border: 0;
 font-size: 12px;
 }
 /* круг */
-.ra_tbl .col1 {width: 3%; text-align: center;} 
+.ra_tbl tr td:nth-child(1) {width: 3%; text-align: center;} 
 /* номер договора */
-.ra_tbl .col2 {width: 7%; text-align: center;}
+.ra_tbl tr td:nth-child(2) {width: 7%; text-align: center;}
 /* объект аренды */
-.ra_tbl .col3 {width: 15%;}
+.ra_tbl tr td:nth-child(3) {width: 15%;} 
 /* наниматель */
-.ra_tbl .col4 {width: 15%;}
+.ra_tbl tr td:nth-child(4) {width: 15%;}
 /* агент */
-.ra_tbl .col5 {width: 15%;}
+.ra_tbl tr td:nth-child(5) {width: 15%;}
 /* статус */
-.ra_tbl .col6 {width: 6%; text-align: center;}
+.ra_tbl tr td:nth-child(6) {width: 6%; text-align: center;}
 /* дней до окончасния  */
-.ra_tbl .col7 {width: 6%; text-align: center;}
+.ra_tbl tr td:nth-child(7) {width: 6%; text-align: center;}
 /* документы */
-.ra_tbl .col8 {width: 8%; text-align: center;}
+.ra_tbl tr td:nth-child(8) {width: 8%; text-align: center;}
 /* завершить */
-.ra_tbl .col9 {width: 8%; text-align: center;}
+.ra_tbl tr td:nth-child(9) {width: 8%; text-align: center;}
 /* расторгнуть */
-.ra_tbl .col10 {width: 8%; text-align: center;}
+.ra_tbl tr td:nth-child(10) {width: 8%; text-align: center;}
 /* продлить */
-.ra_tbl .col11 {width: 8%; text-align: center;}
+.ra_tbl tr td:nth-child(11) {width: 8%; text-align: center;}
 /* удалить */
-.ra_tbl .col12 {width: 3%; text-align: center;}
+.ra_tbl tr td:nth-child(12) {width: 3%; text-align: center;}
 
 .circle {
 border-radius: 50%;
@@ -446,15 +446,78 @@ border: 1px solid grey;
 
 
 
-
-
-
-
-
 /*ADD RENTAL AGREEMENT*/
-.add_ra_comment {
+.add_ra_form_wrapper {
+  margin: 30px auto;
+  width: 600px;
+  border: 1px solid grey;
+}
+
+.add_ra_form_header{
+  text-align: center;
+  background: var(--main-theme_color);
+  display: grid;
+  grid-auto-rows: 30px;
+  align-items: center;
+  border-bottom: 1px solid grey;
+  margin-bottom: 10px;
+}
+
+.add_ra_form{
+  /*  border: 1px solid black;*/
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 30px;
+  grid-row-gap: 2px;
+  align-items: center;
+  padding: 10px 20px;
+}
+
+.add_ra_form_select {
+  width: 100%;
+  padding: 1px;
+}
+
+.add_ra_form_input{
+  width: 100%;
+  padding-left: 2px;
+}
+
+.add_ra_form_button{
+text-align: center;
+align-self: center;
+}
+
+.add_ra_padding {
   padding-left: 20px;
 }
+
+.add_ra_form_wrapper h4 {
+ padding-left: 20px;
+ margin: 0; 
+
+}
+
+
+.add_ra_form_wrapper h4:nth-of-type(4) {margin: 0 0 10px 0;}
+.add_ra_form_wrapper h4:nth-of-type(5) {margin: 20px 0 10px 0;}
+.add_ra_form_wrapper h4:nth-of-type(6){margin: 20px 0 0 0;}
+
+.add_ra_comment {padding-left:30px;}
+.add_ra_text {padding-left: 10px;}
+.add_ra_notice {padding: 0 20px 0 30px;}
+.padd {padding: 10px 20px 0 30px;}
+
+.add_ra_form:nth-last-child(1) {
+  margin: 10px 0;
+}
+
+.add_ra_form_h4_spec {
+  padding-top: 10px;
+}
+
+
+
 
 
 

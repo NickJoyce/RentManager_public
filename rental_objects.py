@@ -5,7 +5,7 @@ from rental_object_data import General, ObjectData, Building, Location, Applianc
 
 class RentalObject:
 	"""Объект недвижимости"""
-	def __init__(self, id_, type_, name): 
+	def __init__(self, id_, type_, name, status): 
 
 
 		# TODO поменять определение данных в таблице rental_objects
@@ -13,6 +13,7 @@ class RentalObject:
 		self.id = id_
 		self.type = type_ # тип объекта недвижимости |T| SOURCE> rental_object_types ['комната', 'квартира', 'дом']
 		self.name = name
+		self.status = status
 
 	# ---------------------------------------------
 
@@ -44,21 +45,21 @@ class RentalObject:
 			return f'({self.id }, {self.type}, {self.name})'
 
 class Room(RentalObject):
-	def __init__(self, rental_object_id, type_, name, total_area, rooms_number):
-		super().__init__(rental_object_id, type_, name)
+	def __init__(self, rental_object_id, type_, name, status, total_area, rooms_number):
+		super().__init__(rental_object_id, type_, name, status)
 		self.total_area =  total_area # общая площадь квартиры
 		self.rooms_number = rooms_number # всего комнат в квартире
 
 
 class Flat(RentalObject):
-	def __init__(self, rental_object_id, type_, name):
-		super().__init__(rental_object_id, type_, name)
+	def __init__(self, rental_object_id, type_, name, status):
+		super().__init__(rental_object_id, type_, name, status)
 
 
 
 class House(RentalObject):
-	def __init__(self, rental_object_id, type_, name):
-		super().__init__(rental_object_id, type_, name)
+	def __init__(self, rental_object_id, type_, name, status):
+		super().__init__(rental_object_id, type_, name, status)
 
 
 

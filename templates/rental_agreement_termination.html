@@ -1,0 +1,29 @@
+{% extends 'index_landlord.html' %} 
+
+{% block breadcrumbs %} 
+Главная: наймодатель -> Договоры -> Завершение договора аренды
+{% endblock %}
+
+{% block main_content %} 
+	<!-- мгновенные сообщения -->
+	{% for cat, msg in get_flashed_messages(True) %}
+	<div class='flash {{cat}}'>{{msg}}</div>
+	{% endfor %}
+
+<div class='details_area_wrapper'>
+	<form method='POST' action="{{url_for('terminate_rental_agreement')}}">
+		<input type="hidden" value="termination" name='source'/>
+		<input type="hidden" value="{{ rental_agreement_id }}" name='rental_agreement_id'/>
+		<div class='add_ra_form_wrapper'>
+			<div class='add_ra_form_header'><div>{{the_title}}</div></div>
+			{% include 'move_out.html' %}
+
+			<div class='add_ra_form'>
+				<div></div> 
+				<div class='item_button'><input value='Завершить договор' type='SUBMIT'></div>
+			</div>
+
+		</div>
+	</form>	
+</div>
+{% endblock %}

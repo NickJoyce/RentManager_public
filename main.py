@@ -13,7 +13,7 @@ application.config['APP_ROOT'] = os.path.dirname(os.path.abspath(__file__))
 
 # ------------------------------------------------------------------------------------------------------------------------------
 
-from datetime import date
+from datetime import date, datetime
 
 from login_checker import logged_in, logged_in_admin, logged_in_landlord, logged_in_tenant, logged_in_agent
 
@@ -27,6 +27,9 @@ from rental_object_data import General, ObjectData, Building, Location, Applianc
 from rental_agreement import RentalAgreement # договор аренд
 from rental_agreement_conditions import Conditions# условия аренды, дополнительны платежи
 from rental_agreement_data import RA_RentalObject, RA_Cost, RA_Thing, RA_Landlord, RA_Tenant, RA_Agent, MoveIn, MoveOut, Termination, Renewal
+
+# преобразования строк полученных из формы в другие типы
+from form_str import FormStr
 
 
 # ВЗАИМОДЕЙСТВИЕ С БД
@@ -571,7 +574,7 @@ def edit_agent(user_id) -> 'html':
 def landlord_rental_objects() -> 'html':
 	the_title = 'Объекты аренды'
 	...
-	# подгружаем данные из БД для создания экземпляров класса Tenant
+	# подгружаем данные из БД 
 	rental_objects_data = db.get_rental_objects_data_of_landlord(session['landlord_id'])
 
 	# список экземпляров классов Room, Flat или House
@@ -595,16 +598,38 @@ def landlord_rental_objects() -> 'html':
 def add_rental_object() -> 'html':
 	the_title = 'Добавление объекта аренды'
 	if request.method == 'POST':
-		type_id = request.form['type_id']
-		name = request.form['name']
-		landlord_id = session['landlord_id']
-		db.create_rental_object(type_id, name, landlord_id)
+
+		# записываем данные в таблицу rental_objects
+		db.create_rental_object(request.form['type_id'], request.form['name'], 'свободен',session['landlord_id'])
+
+		# обновлем список rantal_object_id в session
 		session['rental_objects'] = db.get_rental_object_id_of_landlord(session['landlord_id'])
+		
+		# получаем последний добавленный id для rental_objects
+		rental_object_id = db.get_last_rental_object_id()
+		print(1, rental_object_id)
+
+		agent_id = request.form['agent_id']
+		print(2, agent_id)
+		# если в форме был выбран агент
+		if agent_id:
+			# привязываем его к объекту аренды в таблице ro_id_agent_id
+			db.insert_into_ro_id_agent_id(rental_object_id, agent_id)
+		else:
+			pass
+		flash(f'Объект аренды успешно добавлен', category='success')
 		return redirect(url_for('landlord_rental_objects'))
 
 	else:
+		# получаем типы объектов
 		rental_objects_types = db.get_rental_objects_types()
-		return render_template('add_rental_object.html', the_title=the_title, rental_objects_types=rental_objects_types)
+		# получаем имена агентов
+		agents = []
+		for agent in db.get_agent_data_of_landlord(session['landlord_id']):
+			agents.append(Agent(*agent))
+
+
+		return render_template('add_rental_object.html', the_title=the_title, rental_objects_types=rental_objects_types, agents=agents)
 
 
 # __________Главная: наймодатель -> агенты -> агент _________
@@ -746,6 +771,21 @@ def edit_rental_object(rental_object_id) -> 'html':
 					for id_ in added_costs_id:
 						db.insert_ro_costs(rental_object_id, request.form[f'name_{id_}'], request.form[f'is_payer_landlord_{id_}'])
 			
+
+			elif request.form['source'] == 'agent_tab':
+				# удаляем из таблице ro_id_agent_id строки для данного объекта аренды  
+				db.delete_from_ro_id_agent_id(rental_object_id)
+
+				agent_id = request.form['agent_id']
+				# если agent_id не пустая строка 
+				if agent_id != '':
+					# делаем запись в таблице ro_id_agent_id
+					db.insert_into_ro_id_agent_id(rental_object_id, agent_id)
+				# если пустая, то ничего не делаем
+				else:
+					pass			
+
+
 			return redirect(url_for('edit_rental_object', rental_object_id=rental_object_id))
 
 
@@ -789,11 +829,25 @@ def edit_rental_object(rental_object_id) -> 'html':
 			costs_id = json.dumps([i.id for i in rental_object.costs])
 
 
+			# список агентов наймодателя из таблицы users_agents
+			agents = [] 
+			for agent in db.get_agent_data_of_landlord(session['landlord_id']):
+				agents.append(Agent(*agent))
+
+			# связанный с объектом агент
+			try:
+				rental_object.agent = Agent(*db.get_linked_agent_data(rental_object.id))
+			except:
+				rental_object.agent = Agent(*[None for i in range(5)])
+
+
+
+
 			test = costs_id
 
 			return render_template('edit_rental_object.html', test=test, the_title=the_title, user_name=session['user_name'],
 			 rental_object=rental_object, bathroom_types=bathroom_types, wash_place_types=wash_place_types, building_types=building_types,
-			 things_id_list=things_id_list, costs_id=costs_id)
+			 things_id_list=things_id_list, costs_id=costs_id, agents=agents)
 
 	else:
 		abort(401)
@@ -806,6 +860,7 @@ def landlord_rental_agreements() -> 'html':
 	the_title = 'Договоры'
 
 	# получаем данные договоров аренды для данного наймодателя 
+	test = []
 	rental_agreements = [] 
 	for ra_data in db.get_rental_agreement_data_of_landlord(session['landlord_id']):
 		rental_agreement = RentalAgreement(*ra_data)
@@ -828,12 +883,26 @@ def landlord_rental_agreements() -> 'html':
 		# подгружаем данные условий текущего договора 
 		rental_agreement.conditions = Conditions(*db.get_ra_conditions_data(rental_agreement.id))
 
+		# Получаем даты продлений
+		renewal_dates = []
+		for data in db.get_ra_renewal(rental_agreement.id):
+			renewal_dates.append(Renewal(*data).end_of_term)
+
+		# если договор продлевался
+		if renewal_dates:
+			# то меняем дату окончания договора в экземпляре класса Conditions
+			rental_agreement.conditions.end_of_term = max(renewal_dates)
+			# расчитываем новое количество оставшихся дней
+			rental_agreement.conditions.days_left = rental_agreement.conditions.get_days_left()
+
+
+
 		rental_agreements.append(rental_agreement)
 
 
 
 	return render_template('landlord_rental_agreements.html', the_title=the_title, user_name=session['user_name'], rental_agreements=rental_agreements,
-															  landlord_id=session['landlord_id'])
+															  landlord_id=session['landlord_id'], test=test)
 
 #todo
 @application.route('/add_rental_agreement', methods=['POST','GET']) 
@@ -849,7 +918,7 @@ def add_rental_agreement() -> 'html':
 			renatal_agreement_number = 142857
 
 		# создаем запись в таблице rental_agreements
-		db.create_rental_agreement(renatal_agreement_number, 'заключен', request.form['landlord_id'])
+		db.create_rental_agreement(renatal_agreement_number, request.form['date_of_conclusion_agreement'], 'заключен', request.form['landlord_id'])
 		# обновляем данные в session
 		session['rental_agreements'] = db.get_rental_agreement_id_of_landlord(session['landlord_id'])
 		
@@ -865,6 +934,16 @@ def add_rental_agreement() -> 'html':
 		db.insert_into_ra_rental_object(rental_agreement_id, rental_object_id, rental_object.type, rental_object.location.address,
 										rental_object.general.title_deed)
 
+		# записываем данные связанного с объектом агента если он есть (фиксированные данные агента в договоре)
+		try:
+			agent = Agent(*db.get_linked_agent_data(rental_object.id))
+			agent.passport = Passport(*db.get_passport_data(agent.user_id))
+			db.insert_into_ra_agent(rental_agreement_id, agent.agent_id, agent.passport.last_name, agent.passport.first_name, 
+									 agent.passport.patronymic, agent.phone, agent.email, agent.passport.serie, 
+									 agent.passport.pass_number, agent.passport.authority, agent.passport.registration)
+		except:
+			pass
+
 
 		# создаем запись в таблице ra_landlord (фиксированные данные наймодателя в договоре)
 		# ra_landlord: [rental_agreement_id, landlord_id, last_name, first_name, patronymic, phone, 
@@ -876,7 +955,6 @@ def add_rental_agreement() -> 'html':
 		db.insert_into_ra_landlord(rental_agreement_id, landlord_id, landlord.passport.last_name, landlord.passport.first_name, 
 								   landlord.passport.patronymic, landlord.phone, landlord.email, landlord.passport.serie, 
 								   landlord.passport.pass_number, landlord.passport.authority, landlord.passport.registration)
-
 
 
 		# создаем запись в таблице ra_tenant (фиксированные данные нанимателя в договоре)
@@ -891,21 +969,6 @@ def add_rental_agreement() -> 'html':
 								 tenant.passport.pass_number, tenant.passport.authority, tenant.passport.registration)
 
 
-
-		# создаем запись в таблице ra_agent, если он добавлен (фиксированные данные агента в договоре)
-		# ra_landlord: [rental_agreement_id, agent_id, last_name, first_name, patronymic, phone, 
-		# email, serie, pass_number, authority, registration]
-		# подгрузка из users, users_agents, users_passport		
-		agent_id = request.form['agent_id']
-		if agent_id == '0':
-			pass
-		else:
-			agent = Agent(*db.get_agent_data_by_agent_id(agent_id))
-			agent.passport = Passport(*db.get_passport_data(agent.user_id))
-			db.insert_into_ra_agent(rental_agreement_id, agent_id, agent.passport.last_name, agent.passport.first_name, 
-									 agent.passport.patronymic, agent.phone, agent.email, agent.passport.serie, 
-									 agent.passport.pass_number, agent.passport.authority, agent.passport.registration)
-			
 
 
 		# создаем запись в таблице ra_conditions (данные условий договора аренды)
@@ -930,11 +993,12 @@ def add_rental_agreement() -> 'html':
 
 		# создаем запись в таблице ra_move_in (данные Акта сдачи-приемки)
 		# ra_move_in: [rental_agreement_id, number_of_sets_of_keys, number_of_keys_in_set, rental_object_comment, things_comment]
-		db.insert_into_move_in(rental_agreement_id, request.form['number_of_sets_of_keys'], 
+		db.insert_into_ra_move_in(rental_agreement_id, request.form['date_of_conclusion_move_in'],
+													request.form['number_of_sets_of_keys'], 
 													request.form['number_of_keys_in_set'], 
 													request.form['rental_object_comment'], 
 													request.form['things_comment'])
-
+		flash(f'Договор успешно заключен', category='success')
 		return redirect(url_for('landlord_rental_agreements'))
 
 	else:
@@ -972,7 +1036,8 @@ def add_rental_agreement() -> 'html':
 def delete_rental_agreement() -> 'html':
 	db.delete_rental_agreement(request.form['rental_agreement_id'])
 	# обновляем данные в session
-	session['rental_agreements'] = db.get_rental_agreement_id_of_landlord(session['landlord_id']) 
+	session['rental_agreements'] = db.get_rental_agreement_id_of_landlord(session['landlord_id'])
+	flash(f'Договор успешно удален', category='success')
 	return redirect(url_for('landlord_rental_agreements'))
 
 
@@ -1046,14 +1111,129 @@ def rental_agreement_documents(rental_agreement_id) -> 'html':
 			except:
 				pass
 
-			# ДОСРОЧНОЕ ПРОДЛЕНИЕ				
-			rental_agreement.renewal = Renewal(rental_agreement_id, db.get_ra_renewal(rental_agreement_id))
-			print(rental_agreement.renewal.ends_of_term)
+			# ДОСРОЧНОЕ ПРОДЛЕНИЕ		
+			rental_agreement.renewal = []
+			for data in db.get_ra_renewal(rental_agreement_id):
+				rental_agreement.renewal.append(Renewal(*data))
 
+			return render_template('rental_agreement_documents.html', the_title=the_title, user_name=session['user_name'], rental_agreement=rental_agreement)
 
 	else:
 		abort(401)
-	return render_template('rental_agreement_documents.html', the_title=the_title, user_name=session['user_name'], rental_agreement=rental_agreement)
+	
+
+
+
+
+
+
+
+
+
+
+
+
+@application.route('/rental_agreement_termination/<int:rental_agreement_id>', methods=['POST','GET']) 
+@logged_in_landlord
+def rental_agreement_termination(rental_agreement_id) -> 'html':
+	"""Вывод форму для заполнения Акта возврата"""
+	the_title = 'Завершение договора аренды'
+	return render_template('rental_agreement_termination.html', the_title=the_title, user_name=session['user_name'],
+															    rental_agreement_id=rental_agreement_id)
+
+
+@application.route('/rental_agreement_early_termination/<int:rental_agreement_id>', methods=['POST','GET']) 
+@logged_in_landlord
+def rental_agreement_early_termination(rental_agreement_id) -> 'html':
+	"""Вывод форму для заполнения Акта возврата и Соглашения о расторжении"""
+	the_title = 'Досрочное расторжение договора аренды'
+	return render_template('rental_agreement_early_termination.html', the_title=the_title, user_name=session['user_name'],
+															    rental_agreement_id=rental_agreement_id)
+
+
+@application.route('/terminate_rental_agreement', methods=['POST','GET']) 
+@logged_in_landlord
+def terminate_rental_agreement() -> 'html':
+	"""Запись данных в соответствующие таблицы при Завершении или Досрочном расторжении"""
+	rental_agreement_id = request.form['rental_agreement_id']
+	# данные Акт возврата, таблица ra_move_out 
+	db.insert_into_ra_move_out(rental_agreement_id, request.form['date_of_conclusion_move'],
+							request.form['number_of_sets_of_keys'], request.form['number_of_keys_in_set'], 
+						   request.form['rental_object_comment'], request.form['things_comment'], request.form['damage_cost'], 
+						   request.form['cleaning'], request.form['rental_agreeement_debts'], 
+						   request.form['deposit_refund'], request.form['prepayment_refund'])
+
+	# если завершение в связи с окончанием срока действия договора
+	if request.form['source'] == 'termination':
+		# обновляем статус в таблице rental_agreements
+		db.update_rental_agreements_status(rental_agreement_id, 'завершен')
+
+		flash(f'Договор успешно завершен', category='success')
+
+	# если завершение в связи с досрочным расторжением
+	elif request.form['source'] == 'early_termination':
+		# записываем данные связанные с расторжением в таблицу ra_termination
+		db.insert_into_ra_termination(rental_agreement_id, request.form['date_of_conclusion_early_term'], request.form['notice_date'], 
+								      request.form['end_of_term'], request.form['is_landlord_initiator'])
+		
+		# обновляем статус в таблице rental_agreements
+		db.update_rental_agreements_status(rental_agreement_id, 'досрочно расторгнут')
+
+		flash(f'Договор успешно досрочно расторгнут', category='success')
+
+	# возвращаемся на страницу landlord_rental_agreements 
+	return redirect(url_for('landlord_rental_agreements'))
+
+
+
+@application.route('/renew_rental_agreement/<int:rental_agreement_id>', methods=['POST','GET']) 
+@logged_in_landlord
+def renew_rental_agreement(rental_agreement_id) -> 'html':
+	if request.method == 'POST':
+		
+		# преобразуем стоку полученную из формы в дату
+		form_str = FormStr(request.form['end_of_term'])
+		end_of_term = form_str.transform_to_date()  
+
+		# создаем экземпляр класса Renewal
+		renewal = Renewal(rental_agreement_id, request.form['date_of_conclusion'], end_of_term)
+
+		# определяем дату окончания действия договора до продления
+		# получаем даты продлений
+		renewal_dates = []
+		for data in db.get_ra_renewal(rental_agreement_id):
+			renewal_dates.append(Renewal(*data).end_of_term)
+		# если договор продлевался, то берется последняя (максимальная дата)
+		if renewal_dates:
+			renewal.end_of_term_before = max(renewal_dates)			
+		# если договор не продлевался то берется дата окончания в соответствии с договором 
+		else:
+			conditions = Conditions(*db.get_ra_conditions_data(rental_agreement_id))
+			renewal.end_of_term_before = conditions.end_of_term			
+
+		# позже ли идет дата до которой продлевается, текущей даты окончания действия
+		is_correct_date = renewal.check_date()
+
+		if is_correct_date:
+			# добавляем запись в таблицу ra_renewal
+			db.insert_into_ra_renewal(renewal.rental_agreement_id, renewal.date_of_conclusion, renewal.end_of_term)
+			# обновляем статус в таблице rental_agreements
+			db.update_rental_agreements_status(rental_agreement_id, 'продлен')
+			flash(f'Договор успешно продлен', category='success')
+			return redirect(url_for('landlord_rental_agreements'))
+		else:
+			flash(f"Дата до которой происходит продление не может быть ранее " + 
+				  f"текущей даты оконания договора ({renewal.end_of_term_before.strftime('%d.%m.%Y')})", category='error')
+			return redirect(url_for('renew_rental_agreement', rental_agreement_id=rental_agreement_id))
+
+
+	else:
+		the_title = 'Продление договора аренды'
+		return render_template('renew_rental_agreement.html', the_title=the_title, user_name=session['user_name'], 
+															  rental_agreement_id=rental_agreement_id)
+
+
+
 
 
 

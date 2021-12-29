@@ -25,6 +25,7 @@
 	  <button class="tablinks" onclick="openData(event, 'special')" id="special_button">{{rental_object.type.title()}}</button>
 	  <button class="tablinks" onclick="openData(event, 'things')" id="things_button">Вещи</button>
 	  <button class="tablinks" onclick="openData(event, 'costs')" id="costs_button">Расходы</button>
+	  <button class="tablinks" onclick="openData(event, 'agent')" id="agent_button">Агент</button>
 	</div>
 
 
@@ -35,10 +36,15 @@
 			<form method='POST' action="{{url_for('edit_rental_object', rental_object_id=rental_object.id)}}">
 				<input type="hidden" value="info_tab" name='source'/>
 				<div class="form_items">
-						<div class='item_text'>Тип</div> 
-						<div>{{rental_object.type.title()}}</div>
 						<div class='item_text'>Имя</div> 
 						<div><input class='item_input' name='name' type='TEXT' value="{{rental_object.name}}" autocomplete="off" required></div>
+						
+						<div class='item_text'>Тип</div> 
+						<div>{{rental_object.type.title()}}</div>
+
+						<div class='item_text'>Статус</div> 
+						<div>{{rental_object.status.title()}}</div>
+
 						<div class='item_text'>Кадастровый номер</div> 
 						<div><input class='item_input' name='cadastral_number' type='TEXT' value="{{rental_object.general.cadastral_number}}" autocomplete="off" required></div>
 						<div class='item_text'>Право владения</div> 
@@ -461,6 +467,40 @@
 				<div class='form_items'>
 					<div></div> 
 					<div class='item_button'><input type='SUBMIT' class='save_costs_data' value='Сохранить'></div>
+				</div>
+			</form>
+		</div>
+	</div>
+
+
+	<!-- agent content: -->
+	<div id="agent" class="tabcontent">
+		<div class='form_wrapper'>
+			<form method='POST' action="{{url_for('edit_rental_object', rental_object_id=rental_object.id)}}">
+				<input type="hidden" value="agent_tab" name='source'/>
+				<div class="form_items">
+					<div class='item_text'>Агент</div> 
+
+					<div>
+						<select class='add_rental_object_form_select' size="0" name="agent_id">
+							{% if rental_object.agent.name == None %}
+							<option selected value=''> --- Выберете агента --- </option>
+							{% else %}
+							<option value=''> --- Выберете агента --- </option>	
+							{% endif %}						
+							{% for agent in agents %}
+								{% if agent.agent_id == rental_object.agent.agent_id %}
+				 					<option selected value="{{agent.agent_id}}">{{agent.name}}</option>
+				 				{% else %}
+				 					<option value="{{agent.agent_id}}">{{agent.name}}</option>
+				 				{% endif %}								
+							{% endfor %}
+
+						</select>			
+					</div>
+			
+					<div></div> 
+					<div class='item_button'><input type='SUBMIT' class='save_costs_data' value='Изменить'></div>
 				</div>
 			</form>
 		</div>

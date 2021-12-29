@@ -1,0 +1,37 @@
+<h4>Акт возврата</h4>
+<div class='add_ra_form'>
+	<div class="add_ra_text">Дата подписания акта</div> 
+	<div><input type='DATE' class='item_input'  name ="date_of_conclusion_move"></div>	
+
+	<div class="add_ra_text">Кол-во комплектов ключей</div> 
+	<div><input type='NUMBER' autocomplete="off" class='item_input' name ="number_of_sets_of_keys"></div>	
+
+	<div class="add_ra_text">Количество ключей в комплекте</div> 
+	<div><input type='NUMBER' autocomplete="off" class='item_input' name = "number_of_keys_in_set"></div>		
+</div>
+
+<div class="add_ra_notice">Замечания (жилое помещение)</div> 
+<div class="add_ra_notice"><textarea rows="3"  name="rental_object_comment"></textarea></div>	
+
+<div class="add_ra_notice padd">Замечания (имущество в жп)</div> 
+<div class="add_ra_notice"><textarea rows="3" name="things_comment"></textarea></div>	
+
+<div class='add_ra_form'>
+	<div class="add_ra_text">Оценка ущерба</div> 
+	<div><input type='NUMBER' autocomplete="off" class='item_input' name ="damage_cost" value='0'></div>	
+
+	<div class="add_ra_text">Необходиомсть уборки</div> 
+	<div>
+		<label><input type='radio'  name = "cleaning" value="0" checked>Нет</label>
+		<label><input type='radio'  name = "cleaning" value="1" >Да</label>
+	</div>
+
+	<div class="add_ra_text">Задолженость по платежам</div> 
+	<div><input type='NUMBER' autocomplete="off" class='item_input' name="rental_agreeement_debts" value='0'></div>
+
+	<div class="add_ra_text">Сумма возвращаемого депозита</div> 
+	<div><input type='NUMBER' autocomplete="off" class='item_input' name="deposit_refund" value='0'></div>					
+
+	<div class="add_ra_text">Сумма возвращаемой предоплаты</div> 
+	<div><input type='NUMBER' autocomplete="off" class='item_input' name="prepayment_refund" value='0'></div>
+</div>			

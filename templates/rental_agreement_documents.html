@@ -29,33 +29,35 @@
 	<div id="agreement" class="tabcontent">
 		<div class='form_wrapper'>
 			<input type="hidden" value="info_tab" name='source'/>		
-			<p>Номер договора: {{ rental_agreement.agreement_number }}</p>
-			<p>Дата заключения договора: {{ rental_agreement.conditions.start_of_term }}</p>
-			<p>ФИО Наймодателя: {{rental_agreement.lanlord.last_name}}
-							    {{rental_agreement.lanlord.first_name}}
-							    {{rental_agreement.lanlord.patronymic}}</p>
-			<p>Документ-основание: {{ rental_agreement.rental_object.title_deed }}</p>
-			<p>ФИО Нанимателя: {{rental_agreement.tenant.last_name}}
-							   {{rental_agreement.tenant.first_name}}
-							   {{rental_agreement.tenant.patronymic}}</p>
+			<h4>1</h4>
+			<p>Номер: {{ rental_agreement.agreement_number }}</p>
+			<p>Текущий статус: {{ rental_agreement.status }}</p>
+			<p>Дата заключения: {{ rental_agreement.date_of_conclusion }}</p>
 			<p>Адрес объекта аренды: {{ rental_agreement.rental_object.address }}</p>
+			<p>Документ-основание для сдачи: {{ rental_agreement.rental_object.title_deed }}</p>
 
+			<h4>Условия договора</h4>
+			<p>Вступает в силу с: {{rental_agreement.conditions.start_of_term}}</p>
+			<p>Действует до: {{rental_agreement.conditions.end_of_term}}</p>
 			<p>Плата за найм: {{ rental_agreement.conditions.rental_rate }}</p>
-			<p>День оплаты: {{ rental_agreement.conditions.payment_day}}</p>
 			<p>Страховая залоговая сумма: {{ rental_agreement.conditions.deposit }}</p>
-
+			<p>День оплаты: {{ rental_agreement.conditions.payment_day}}</p>
+			<p>Расходы на содержание:</p>
 			<table>
 				<tr><th>Платеж</th><th>Плательщик</th></tr>
 				{% for cost in rental_agreement.costs %}
 				<tr><td>{{ cost.name }}</td><td>{{ cost.payer }}</td><tr>
 				{% endfor %}
 			</table>
-			<p>Плата за клининг: {{rental_agreement.conditions.cleaning_cost}} </p>
-			<p>Договор вступает в силу с: {{rental_agreement.conditions.start_of_term}}</p>
-			<p>Договор действует до: {{rental_agreement.conditions.end_of_term}}</p>
 			<p>Неустойка за каждый день просрочки: {{rental_agreement.conditions.late_fee}}, %</p>
+			<p>Плата за клининг: {{rental_agreement.conditions.cleaning_cost}} </p>
+
 			<h4>Реквизиты сторон</h4>
-			<h4>НАЙМОДАТЕЛЬ</h4>
+
+			<table>
+			<tr><th>НАЙМОДАТЕЛЬ</th><th>НАНИМАТЕЛЬ</th></tr>
+			<tr>
+				<td>
 			<p>{{rental_agreement.lanlord.last_name}}
 			   {{rental_agreement.lanlord.first_name}}
 			   {{rental_agreement.lanlord.patronymic}}</p>
@@ -64,15 +66,20 @@
 			<p>Прописан: {{ rental_agreement.lanlord.registration }}</p>
 			<p>Телефон для связи {{ rental_agreement.lanlord.phone }}</p>
 			<p>Email: {{ rental_agreement.lanlord.email }}</p>
-			<h4>НАНИМАТЕЛЬ</h4>
-			<p>{{rental_agreement.tenant.last_name}}
-			   {{rental_agreement.tenant.first_name}}
-			   {{rental_agreement.tenant.patronymic}}</p>
-			<p>Паспорт: серия {{ rental_agreement.tenant.serie }} №{{ rental_agreement.tenant.pass_number }}</p>
-			<p>Орган выдавший паспорт: {{ rental_agreement.tenant.authority }}</p>
-			<p>Прописан: {{ rental_agreement.tenant.registration }}</p>
-			<p>Телефон для связи {{ rental_agreement.tenant.phone }}</p>
-			<p>Email: {{ rental_agreement.tenant.email }}</p>
+				</td>
+				<td>
+					<p>{{rental_agreement.tenant.last_name}}
+					   {{rental_agreement.tenant.first_name}}
+					   {{rental_agreement.tenant.patronymic}}</p>
+					<p>Паспорт: серия {{ rental_agreement.tenant.serie }} №{{ rental_agreement.tenant.pass_number }}</p>
+					<p>Орган выдавший паспорт: {{ rental_agreement.tenant.authority }}</p>
+					<p>Прописан: {{ rental_agreement.tenant.registration }}</p>
+					<p>Телефон для связи {{ rental_agreement.tenant.phone }}</p>
+					<p>Email: {{ rental_agreement.tenant.email }}</p>
+				</td>
+			</tr>		
+			</table>
+
 
 			<p>---------------------------------------------------------</p>			
 			<p>{{ rental_agreement }}</p>
@@ -108,6 +115,7 @@
 	<div id="move_in" class="tabcontent">
 		<div class='form_wrapper'>
 			<input type="hidden" value="move_in_tab" name='source'/>
+			<p>Дата подписания Акта сдачи-приемки: {{ rental_agreement.move_in.date_of_conclusion }} </p>
 			<p>Количество комплектов ключей: {{ rental_agreement.move_in.number_of_sets_of_keys }}</p>
 			<p>Количество ключей в комплекте: {{ rental_agreement.move_in.number_of_keys_in_set }} </p>
 			<p>Замечания к ЖП: {{ rental_agreement.move_in.rental_object_comment }} </p>
@@ -123,6 +131,7 @@
 		<div class='form_wrapper'>
 			<input type="hidden" value="move_out_tab" name='source'/>		
 			{% if rental_agreement.move_out %}
+			<p>Дата подписания Акта возврата: {{ rental_agreement.move_out.date_of_conclusion }} </p>
 			<p>Количество комплектов ключей: {{ rental_agreement.move_out.number_of_sets_of_keys }}</p>
 			<p>Количество ключей в комплекте: {{ rental_agreement.move_out.number_of_keys_in_set }} </p>
 			<p>Замечания к ЖП: {{ rental_agreement.move_out.rental_object_comment }} </p>
@@ -147,15 +156,23 @@
 		<div class='form_wrapper'>
 			<input type="hidden" value="termination_tab" name='source'/>		
 			{% if rental_agreement.termination %}
+			<p>Дата заключения соглашения: {{ rental_agreement.termination.date_of_conclusion }}</p>
+			<p>Инициатор расторжения: 
+			{% if rental_agreement.termination.is_landlord_initiator == 0 %} Наниматель
+			{% elif rental_agreement.termination.is_landlord_initiator == 1 %} Наймодатель
+			{% endif %}
+			</p>
 			<p>Дата уведомления инициатором: {{ rental_agreement.termination.notice_date }}</p>
 			<p>Дата досрочного расторжения: {{ rental_agreement.termination.end_of_term }}</p>
-			<p>Инициатор расторжения: {{ rental_agreement.termination.is_landlord_initiator }}</p>
+
+
 			{% else %}
 			<p>Договор досрочно не расторгался</p>
 			{% endif %}
 
 			<p>---------------------------------------------------------</p>			
 			<p>{{ rental_agreement.termination }}</p>
+			{{ rental_agreement.termination.notice_date }}
 			<p>---------------------------------------------------------</p>	
 		</div>
 	</div>
@@ -167,9 +184,12 @@
 			<input type="hidden" value="renewal_tab" name='source'/>	
 			<h4>Список дат продлений</h4>
 			<table>
-				<tr><th>Даты продления</th></tr>
-				{% for date in rental_agreement.renewal.ends_of_term %}
-				<tr><td>{{ date[0] }}</td></tr>				
+				<tr><th>Дата заключения соглашения</th><th>Продлен до</th></tr>
+				{% for data in rental_agreement.renewal %}
+				<tr>
+					<td>{{ data.date_of_conclusion }}</td>
+					<td>{{ data.end_of_term }}</td>
+				</tr>				
 				{% endfor %}
 			</table>
 			<p></p>

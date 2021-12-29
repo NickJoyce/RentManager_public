@@ -1,0 +1,50 @@
+{% extends 'index_landlord.html' %} 
+
+{% block breadcrumbs %} 
+Главная: наймодатель -> Договоры -> Завершение договора аренды
+{% endblock %}
+
+{% block main_content %} 
+	<!-- мгновенные сообщения -->
+	{% for cat, msg in get_flashed_messages(True) %}
+	<div class='flash {{cat}}'>{{msg}}</div>
+	{% endfor %}
+	
+
+<div class='details_area_wrapper'>
+	<form method='POST' action="{{url_for('terminate_rental_agreement')}}">
+		<input type="hidden" value="early_termination" name='source'/>
+		<input type="hidden" value="{{ rental_agreement_id }}" name='rental_agreement_id'/>
+		<div class='add_ra_form_wrapper'>
+			<div class='add_ra_form_header'><div>{{the_title}}</div></div>	
+			<h4 class="add_ra_form_h4_spec">Соглашение о досрочном расторжении</h4>		
+			<div class='add_ra_form'>
+
+				<div class="add_ra_text">Дата подписания соглашения</div> 
+				<div><input type='DATE' class='item_input'  name ="date_of_conclusion_early_term"></div>				
+
+				<div class="add_ra_text">Инициатор расторжения</div> 
+				<div>
+					<select name="is_landlord_initiator" required>
+						<option disabled selected value>--выберите инициатора расторжения--</option>
+						<option value="0">Наниматель</option>
+						<option value="1">Наймодатель</option>
+					</select>
+				</div>					
+
+				<div class="add_ra_text">Дата уведомления о расторжении</div> 
+				<div><input type='DATE' class='item_input'  name ="notice_date"></div>	
+
+				<div class="add_ra_text">Дата расторжения</div> 
+				<div><input type='DATE' class='item_input'  name ="end_of_term"></div>	
+			</div>
+			{% include 'move_out.html' %}
+			<div class='add_ra_form'>
+				<div></div> 
+				<div class='item_button'><input value='Расторгнуть договор досрочно' type='SUBMIT'></div>
+			</div>
+
+		</div>
+	</form>	
+</div>
+{% endblock %}
