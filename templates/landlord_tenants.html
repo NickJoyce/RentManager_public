@@ -5,6 +5,13 @@
 {% endblock %}
 
 {% block main_content %} 
+	<!-- мгновенные сообщения -->
+	{% for cat, msg in get_flashed_messages(True) %}
+	<div class='flash {{cat}}'>{{msg}}</div>
+	{% endfor %}
+	
+	<div class='main_content_header'><h2>{{the_title}}</h2></div>
+
 	<div class='any_users'>
 		<div class='add_user'>
 			<button class='add_button' onclick="document.location='{{ add_tenant_url }}'">+ add tenant</button>

@@ -249,6 +249,10 @@ background: var(--element-bg-color);
 min-height: 600px;
 }
 
+.main_content_header {
+  text-align: center;
+}
+
 
 
 /* ------------------------- FOOTER ------------------------- */
@@ -263,7 +267,7 @@ grid-column: 1/3;
 /*USERS GENERAL VIEW*/
 .any_users {
 width: 800px;
-margin: 30px auto;
+margin: 20px auto;
 }
 
 .any_users table {
@@ -326,22 +330,33 @@ align-self: center;
 
 /*USERS GENERAL VIEW*/
 .any_rental_objects {
-width: 800px;
-margin: 30px auto;
+width: 650px;
+margin: 20px auto;
 }
 
 .any_rental_objects table {
 border: 0;
 }
 
-.add_rental_object {}
 
+.any_rental_objects table td:nth-child(1) {width: 42%;}
+.any_rental_objects table td:nth-child(2) {width: 22%;text-align: center;}
+.any_rental_objects table td:nth-child(3) {width: 7%; text-align: right; border-right: none ;}
+.any_rental_objects table td:nth-child(4) {width: 15%;text-align: left; border-left: none;}
+.any_rental_objects table td:nth-child(5) {width: 7%;text-align: center;}
+.any_rental_objects table td:nth-child(6) {width: 7%;text-align: center;}
+
+
+
+
+
+.add_rental_object {}
 .details_button {}
 .delete_button{}
 
 
 
-/*ADD USER*/
+/*ADD RENTAL OBJECT*/
 .add_rental_object_form_wrapper {
   margin: 30px auto;
   width: 400px;
@@ -393,40 +408,41 @@ align-self: center;
 
 
 /* ------------------------- RENTAL AGREEMENT  MANAGEMENT  ------------------------- */
-/*RENTAL AGREEMENT VIEW*/
+/*CURRENT RENTAL AGREEMENT VIEW*/
 .ra_wrap {
 width: 96%;
-margin: 30px auto;
+margin: 20px auto;
 }
 
 .ra_tbl {
 border: 0;
 font-size: 12px;
 }
-/* круг */
-.ra_tbl tr td:nth-child(1) {width: 3%; text-align: center;} 
+
 /* номер договора */
-.ra_tbl tr td:nth-child(2) {width: 7%; text-align: center;}
+.ra_tbl tr td:nth-child(1) {width: 7%; text-align: center;}
 /* объект аренды */
-.ra_tbl tr td:nth-child(3) {width: 15%;} 
+.ra_tbl tr td:nth-child(2) {width: 30%;} 
 /* наниматель */
-.ra_tbl tr td:nth-child(4) {width: 15%;}
+.ra_tbl tr td:nth-child(3) {width: 15%;}
 /* агент */
-.ra_tbl tr td:nth-child(5) {width: 15%;}
+/*.ra_tbl tr td:nth-child(4) {width: 15%;}*/
 /* статус */
-.ra_tbl tr td:nth-child(6) {width: 6%; text-align: center;}
-/* дней до окончасния  */
-.ra_tbl tr td:nth-child(7) {width: 6%; text-align: center;}
+.ra_tbl tr td:nth-child(4) {width: 6%; text-align: center;}
+/* круг */
+.ra_tbl tr td:nth-child(5) {width: 2%; text-align: right; border-right: none;} 
+/* дней до окончания  */
+.ra_tbl tr td:nth-child(6) {width: 4%; text-align: left; border-left: none;}
 /* документы */
-.ra_tbl tr td:nth-child(8) {width: 8%; text-align: center;}
+.ra_tbl tr td:nth-child(7) {width: 8%; text-align: center;}
 /* завершить */
-.ra_tbl tr td:nth-child(9) {width: 8%; text-align: center;}
+.ra_tbl tr td:nth-child(8) {width: 8%; text-align: center;}
 /* расторгнуть */
-.ra_tbl tr td:nth-child(10) {width: 8%; text-align: center;}
+.ra_tbl tr td:nth-child(9) {width: 8%; text-align: center;}
 /* продлить */
-.ra_tbl tr td:nth-child(11) {width: 8%; text-align: center;}
+.ra_tbl tr td:nth-child(10) {width: 8%; text-align: center;}
 /* удалить */
-.ra_tbl tr td:nth-child(12) {width: 3%; text-align: center;}
+.ra_tbl tr td:nth-child(11) {width: 3%; text-align: center;}
 
 .circle {
 border-radius: 50%;
@@ -441,6 +457,16 @@ border: 1px solid grey;
 .yellow {background: yellow;}
 .grey {background: grey;}
 .green {background: green;}
+
+.ra_top_menu {
+display: grid;
+grid-template-columns: 1fr 200px; 
+}
+
+.ra_top_menu button:nth-child(1) {width: 200px;}
+
+
+
 
 
 

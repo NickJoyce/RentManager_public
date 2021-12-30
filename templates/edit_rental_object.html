@@ -43,8 +43,26 @@
 						<div>{{rental_object.type.title()}}</div>
 
 						<div class='item_text'>Статус</div> 
-						<div>{{rental_object.status.title()}}</div>
+						<div>{{rental_object.status}}</div>
 
+						{% if rental_object.status != 'занят' %}
+						<div class='item_text'>Cдается?</div> 
+						<div>
+							{% if rental_object.status == 'свободен' %}
+							<label><input type="radio" name="status" value="свободен" checked>да</label>
+							<label><input type="radio" name="status" value="не сдается">нет</label>
+							{% elif rental_object.status == 'не сдается' %}
+							<label><input type="radio" name="status" value="свободен">да</label>
+							<label><input type="radio" name="status" value="не сдается" checked>нет</label>
+							{% endif %}
+						</div>
+						{% endif %}
+
+
+
+
+				</div>
+				<div class="form_items">
 						<div class='item_text'>Кадастровый номер</div> 
 						<div><input class='item_input' name='cadastral_number' type='TEXT' value="{{rental_object.general.cadastral_number}}" autocomplete="off" required></div>
 						<div class='item_text'>Право владения</div> 

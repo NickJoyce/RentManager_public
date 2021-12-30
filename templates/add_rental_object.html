@@ -26,15 +26,6 @@
 					<div>Наименование объекта</div> 
 					<div><input class='add_rental_object_form_input' name='name' type='TEXT' autocomplete="off" required></div>
 				
-					<div>Агент</div> 
-					<div>
-							<select class='add_rental_object_form_select' size="0" name="agent_id">
-								<option selected value=''> --- Выберете агента --- </option>
-								{% for agent in agents %}
-					 				<option value="{{agent.agent_id}}">{{agent.name}}</option>
-								{% endfor %}
-							</select>
-					</div>
 				</div>
 
 				<div class='add_rental_object_form'>

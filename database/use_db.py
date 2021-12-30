@@ -1671,7 +1671,7 @@ class RentalObgectDM:
 	# GET RENTAL OBJECT DATA
 	def get_rental_object_data(self, rental_object_id):
 		with self.context_manager(self.config) as cursor:
-			cursor.execute("""SELECT id, type_id, name FROM rental_objects WHERE id=%s""", (rental_object_id ,))
+			cursor.execute("""SELECT id, type_id, name, status  FROM rental_objects WHERE id=%s""", (rental_object_id ,))
 			return cursor.fetchall()[0]
 
 
@@ -2320,23 +2320,32 @@ class RentalObgectDM:
 			cursor.execute("""INSERT INTO ra_renewal(rental_agreement_id, date_of_conclusion, end_of_term)
 							  VALUES (%s,%s,%s)""", (rental_agreement_id, date_of_conclusion, end_of_term))
 
-
-
-
-
-
-
 	# UPDATE status IN rental_agreements
 	def update_rental_agreements_status(self, rental_agreement_id, status):
 		with self.context_manager(self.config) as cursor:
 			cursor.execute("""UPDATE rental_agreements SET status=%s WHERE id=%s""", (status, rental_agreement_id))		
 
 
-	# SET ATTRIBUTES [rental_objects]: name
-	def set_rental_object_name(self, rental_object_id, value):
-		with self.context_manager(self.config) as cursor:
-			cursor.execute("""UPDATE rental_objects SET name=%s WHERE id=%s""", (value, rental_object_id,))
 
+
+
+
+
+
+
+
+
+
+
+
+	# UPDATE ATTRIBUTES [rental_objects]: name, status
+	def update_rental_object_name(self, rental_object_id, name):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""UPDATE rental_objects SET name=%s WHERE id=%s""", (name, rental_object_id,))
+
+	def update_rental_object_status(self, rental_object_id, status):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""UPDATE rental_objects SET status=%s WHERE id=%s""", (status, rental_object_id,))
 
 
 	# SET ATTRIBUTES [ro_general]: ['name', 'cadastral_number', 'title_deed']
@@ -2763,7 +2772,7 @@ class RentalAgreementDM:
 	# GET RENTAL OBJECT DATA (CURRENT RENATAL AGREEMENT)
 	def get_ra_rental_object_data(self, rental_agreement_id):
 		with self.context_manager(self.config) as cursor:
-			cursor.execute("""SELECT rro.rental_object_id, rot.type, rro.address, rro.title_deed
+			cursor.execute("""SELECT rro.rental_agreement_id, rro.rental_object_id, rot.type, rro.address, rro.title_deed
 							  FROM ra_rental_object AS rro 
 							  JOIN rental_object_types AS rot
 							  ON rro.type=rot.id

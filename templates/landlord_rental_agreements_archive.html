@@ -15,7 +15,7 @@
 	<div class='ra_wrap'>
 		<div class="ra_top_menu">
 			<button onclick="document.location='{{url_for('add_rental_agreement')}}'">Заключить новый договор</button>
-			<button onclick="document.location='{{url_for('landlord_rental_agreements_archive')}}'">Договоры (архив)</button>
+			<button onclick="document.location='{{url_for('landlord_rental_agreements')}}'">Текущие договоры</button>
 		</div>
 	
 
@@ -39,34 +39,30 @@
 				<td>{{ rental_agreement.agreement_number }}</td>
 				<td>{{ rental_agreement.rental_object.address }}</td>
 				<td>{{ rental_agreement.tenant.last_name }}
-					{{ rental_agreement.tenant.first_name }}
+								 {{ rental_agreement.tenant.first_name }}
 				</td>
 <!-- 				<td>{{ rental_agreement.agent.last_name }}
 					{{ rental_agreement.agent.first_name }}
 				</td> -->
 				<td>{{ rental_agreement.status }}</td>
 				
-				{% if rental_agreement.conditions.days_left  > rental_agreement.conditions.days_before_end_of_term_l  %}
-					<td><div class='circle green'> </div></td>
-				{% elif rental_agreement.conditions.days_left  == 0 %}
-					<td><div class='circle red'> </div></td>
-				{% else %}
-					<td><div class='circle yellow'> </div></td>
-				{% endif %}
 
-				<td> {{ rental_agreement.conditions.days_left }}</td>
+					<td><div class='circle'> </div></td>
+
+
+				<td> 0</td>
 				<td>
 					<button onclick="document.location='{{url_for('rental_agreement_documents', rental_agreement_id=rental_agreement.id)}}'">Документы</button>
 				</td>
 				<td>
-					<button onclick="document.location='{{url_for('rental_agreement_termination', rental_agreement_id=rental_agreement.id)}}'">Завершить</button>
+					
 				</td>
-				<td><button onclick="document.location='{{url_for('rental_agreement_early_termination', rental_agreement_id=rental_agreement.id)}}'">Расторгнуть</button></td>
-				<td><button onclick="document.location='{{url_for('renew_rental_agreement', rental_agreement_id=rental_agreement.id)}}'">Продлить</button></td>
+				<td></td>
+				<td></td>
 				<td>
 					<form method='POST' action="{{url_for('delete_rental_agreement')}}">
 						<input type="hidden" value="{{rental_agreement.id}}" name='rental_agreement_id'/>
-						<input type="hidden" value="current" name='source'/>
+						<input type="hidden" value="archive" name='source'/>
 						<button class='delete_button'>x</button>
 					</form>
 				</td>
