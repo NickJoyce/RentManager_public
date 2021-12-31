@@ -646,9 +646,13 @@ border: var(--btn-border_active);
 
 
 /* FLASH - Мгновенные сообщения*/
+.flash.error:before {
+  content: '(!) ';
+}
+
 .flash {
-text-align: center;
-padding: 8px 0 8px 0;
+text-align: left;
+padding: 8px 0 8px 20px;
 }
 
 .flash.success {

@@ -1011,6 +1011,15 @@ class UserDM:
 
 
 
+
+	# GET USER DATA BY ID
+	def get_user_data_by_id(self, user_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT id, name, phone, email FROM users WHERE id=%s""", (user_id,))
+			return cursor.fetchall()[0]
+
+
+
 	# FOR LANDLORDS DATA OF ADMIN OUTPUT
 	def get_landlord_user_id_of_admin(self, admin_id):
 		"""возвращает список user_id наймодателей данного администратора"""

@@ -978,97 +978,121 @@ def add_rental_agreement() -> 'html':
 	"""Заключение договора найма"""
 	the_title = 'Заключение нового договора найма'
 	if request.method == 'POST':
-		last_renatal_agreement_number = db.get_last_agreement_number()
-		if last_renatal_agreement_number:
-			renatal_agreement_number = int(last_renatal_agreement_number)+1
-		else:
-			renatal_agreement_number = 142857
-
-		# создаем запись в таблице rental_agreements
-		db.create_rental_agreement(renatal_agreement_number, request.form['date_of_conclusion_agreement'], 'заключен', request.form['landlord_id'])
-		# обновляем данные в session
-		session['rental_agreements'] = db.get_rental_agreement_id_of_landlord(session['landlord_id'])
-		
-		rental_agreement_id = db.get_last_agreement_id()
-
-		# создаем запись в таблице ra_rental_object (фиксированные данные объекта аренды в договоре)
-		# ra_rental_object: [ rental_agreement_id, rental_object_id, type, address, title_deed ]
-		# подгузка из rental_objects, ro_general, ro_location по rental_object_id
+		# подгружаем необходимые для формирования договора данные выбранного объекта аренды
 		rental_object_id = request.form['rental_object_id']
 		rental_object = RentalObject(*db.get_rental_object_data(rental_object_id))
 		rental_object.location = Location(*db.get_location_data(rental_object_id))
 		rental_object.general = General(*db.get_general_data(rental_object_id))
-		db.insert_into_ra_rental_object(rental_agreement_id, rental_object_id, rental_object.type, rental_object.location.address,
-										rental_object.general.title_deed)
 
-		# записываем данные связанного с объектом агента если он есть (фиксированные данные агента в договоре)
-		try:
-			agent = Agent(*db.get_linked_agent_data(rental_object.id))
-			agent.passport = Passport(*db.get_passport_data(agent.user_id))
-			db.insert_into_ra_agent(rental_agreement_id, agent.agent_id, agent.passport.last_name, agent.passport.first_name, 
-									 agent.passport.patronymic, agent.phone, agent.email, agent.passport.serie, 
-									 agent.passport.pass_number, agent.passport.authority, agent.passport.registration)
-		except:
-			pass
-
-
-		# создаем запись в таблице ra_landlord (фиксированные данные наймодателя в договоре)
-		# ra_landlord: [rental_agreement_id, landlord_id, last_name, first_name, patronymic, phone, 
-		# email, serie, pass_number, authority, registration]
-		# подгрузка из users, users_landlords, users_passport
+		# подгружаем необходимые для формирования договора данные наймодателя
 		landlord_id = request.form['landlord_id']
 		landlord = Landlord(*db.get_landlord_data_by_landlord_id(landlord_id))
 		landlord.passport = Passport(*db.get_passport_data(landlord.user_id))
-		db.insert_into_ra_landlord(rental_agreement_id, landlord_id, landlord.passport.last_name, landlord.passport.first_name, 
-								   landlord.passport.patronymic, landlord.phone, landlord.email, landlord.passport.serie, 
-								   landlord.passport.pass_number, landlord.passport.authority, landlord.passport.registration)
 
-
-		# создаем запись в таблице ra_tenant (фиксированные данные нанимателя в договоре)
-		# ra_landlord: [rental_agreement_id, tenant_id, last_name, first_name, patronymic, phone, 
-		# email, serie, pass_number, authority, registration]
-		# подгрузка из users, users_tenants, users_passport		
+		# подгружаем необходимые для формирования договора данные нанимателя		
 		tenant_id = request.form['tenant_id']
 		tenant = Tenant(*db.get_tenant_data_by_tenant_id(tenant_id))
 		tenant.passport = Passport(*db.get_passport_data(tenant.user_id))
-		db.insert_into_ra_tenant(rental_agreement_id, tenant_id, tenant.passport.last_name, tenant.passport.first_name, 
-								 tenant.passport.patronymic, tenant.phone, tenant.email, tenant.passport.serie, 
-								 tenant.passport.pass_number, tenant.passport.authority, tenant.passport.registration)
+
+		try:
+			# подгружаем необходимые для формирования договора данные агента (если он привязан к сдаваемому объекту)	
+			agent = Agent(*db.get_linked_agent_data(rental_object.id))
+			agent.passport = Passport(*db.get_passport_data(agent.user_id))
+		except:
+			agent = None
+
+		# проверяем есть ли пустые строки в необъодимых для формирования договора данных объекта аренды
+		ro_empty_strings = rental_object.location.get_empty_strings() + rental_object.general.get_empty_strings()
+		# проверяем есть ли пустые строки в необъодимых для формирования договора данных наймодателя
+		landlord_empty_strings = landlord.get_empty_strings() +  landlord.passport.get_empty_strings()
+		# проверяем есть ли пустые строки в необъодимых для формирования договора данных нанимателя
+		tenant_empty_strings = tenant.get_empty_strings() + tenant.passport.get_empty_strings()
+		# проверяем есть ли пустые строки в необъодимых для формирования договора данных агента (если он есть)
+		if agent:
+			agent_empty_strings = agent.get_empty_strings() +  agent.passport.get_empty_strings()
+		else:
+			agent_empty_strings = []
+
+		empty_strings = {'Для объекта аренды': ro_empty_strings, 
+					     'Для наймодателя': landlord_empty_strings, 
+						 'Для нанимателя':tenant_empty_strings, 
+						 'Для агента': agent_empty_strings}
+
+		# флаг: есть недостающие данные?
+		is_any_empty_str = False
+		# cоздаем мгновенные сообщения для вывода наименований недостающих данных
+		for k, v in empty_strings.items():
+			if v:
+				flash(f"{k} не указано: {', '.join(v)}", category='error')
+				if not is_any_empty_str:
+					is_any_empty_str = True
+
+		# прерываем создание договора и возвращаемся на стр с формой если каких то данных нет
+		if is_any_empty_str:
+			return redirect(url_for('add_rental_agreement'))
+		else:
+			# формируем номер договора
+			last_renatal_agreement_number = db.get_last_agreement_number()
+			if last_renatal_agreement_number:
+				renatal_agreement_number = int(last_renatal_agreement_number)+1
+			else:
+				renatal_agreement_number = 142857
+
+			# создаем запись в таблице rental_agreements
+			db.create_rental_agreement(renatal_agreement_number, request.form['date_of_conclusion_agreement'], 'заключен', request.form['landlord_id'])
+			# обновляем данные в session
+			session['rental_agreements'] = db.get_rental_agreement_id_of_landlord(session['landlord_id'])
+			
+			rental_agreement_id = db.get_last_agreement_id()
 
 
+			# создаем запись в таблице ra_rental_object (фиксированные данные объекта аренды в договоре)
+			db.insert_into_ra_rental_object(rental_agreement_id, rental_object_id, rental_object.type, rental_object.location.address,
+											rental_object.general.title_deed)
 
 
-		# создаем запись в таблице ra_conditions (данные условий договора аренды)
-		# ra_conditions: [rental_agreement_id, rental_rate, prepayment, deposit, late_fee, 
-		# start_of_term, end_of_term, payment_day, cleaning_cost]
-		db.insert_into_ra_conditions(rental_agreement_id, request.form['rental_rate'], request.form['prepayment'], 
-									 request.form['deposit'], request.form['late_fee'], request.form['start_of_term'], 
-									 request.form['end_of_term'], request.form['payment_day'], request.form['cleaning_cost'])
-		# создаем запись в таблице ra_things (фиксированные данные описи имущества в договоре)
-		# ra_things: [id, rental_agreement_id, thing_number, thing_name, amount, cost]
-		# подгрузка из ro_things по rental_object_id 
-		for thing_data in db.get_things(rental_object.id):
-			thing = Thing(*thing_data)
-			db.insert_into_ra_things(rental_agreement_id, thing.thing_number, thing.thing_name, thing.amount, thing.cost)
+			# создаем запись в таблице ra_landlord (фиксированные данные наймодателя в договоре)
+			db.insert_into_ra_landlord(rental_agreement_id, landlord_id, landlord.passport.last_name, landlord.passport.first_name, 
+									   landlord.passport.patronymic, landlord.phone, landlord.email, landlord.passport.serie, 
+									   landlord.passport.pass_number, landlord.passport.authority, landlord.passport.registration)
 
-		# создаем запись в таблице ra_costs (фиксированные данные расходов на содержание в договоре)
-		# ra_costs: [id, rental_agreement_id, name, is_payer_landlord]
-		# подгрузка из ro_costs по rental_object_id 
-		for cost_data in db.get_costs_data(rental_object.id):
-			cost = Cost(*cost_data)
-			db.insert_into_ra_costs(rental_agreement_id, cost.name, cost.is_payer_landlord)
 
-		# создаем запись в таблице ra_move_in (данные Акта сдачи-приемки)
-		# ra_move_in: [rental_agreement_id, number_of_sets_of_keys, number_of_keys_in_set, rental_object_comment, things_comment]
-		db.insert_into_ra_move_in(rental_agreement_id, request.form['date_of_conclusion_move_in'],
-													request.form['number_of_sets_of_keys'], 
-													request.form['number_of_keys_in_set'], 
-													request.form['rental_object_comment'], 
-													request.form['things_comment'])
-		# обновляем статус для объекта аренды
-		db.update_rental_object_status(rental_object_id, 'занят')
-		flash(f'Договор успешно заключен', category='success')
-		return redirect(url_for('landlord_rental_agreements'))
+			# создаем запись в таблице ra_tenant (фиксированные данные нанимателя в договоре)
+			db.insert_into_ra_tenant(rental_agreement_id, tenant_id, tenant.passport.last_name, tenant.passport.first_name, 
+									 tenant.passport.patronymic, tenant.phone, tenant.email, tenant.passport.serie, 
+									 tenant.passport.pass_number, tenant.passport.authority, tenant.passport.registration)
+
+			# записываем данные связанного с объектом агента если он есть (фиксированные данные агента в договоре)
+			if agent:
+				db.insert_into_ra_agent(rental_agreement_id, agent.agent_id, agent.passport.last_name, agent.passport.first_name, 
+							 agent.passport.patronymic, agent.phone, agent.email, agent.passport.serie, 
+							 agent.passport.pass_number, agent.passport.authority, agent.passport.registration)
+
+
+			# создаем запись в таблице ra_conditions (данные условий договора аренды)
+			db.insert_into_ra_conditions(rental_agreement_id, request.form['rental_rate'], request.form['prepayment'], 
+										 request.form['deposit'], request.form['late_fee'], request.form['start_of_term'], 
+										 request.form['end_of_term'], request.form['payment_day'], request.form['cleaning_cost'])
+			# создаем запись в таблице ra_things (фиксированные данные описи имущества в договоре)
+			for thing_data in db.get_things(rental_object.id):
+				thing = Thing(*thing_data)
+				db.insert_into_ra_things(rental_agreement_id, thing.thing_number, thing.thing_name, thing.amount, thing.cost)
+
+			# создаем запись в таблице ra_costs (фиксированные данные расходов на содержание в договоре)
+			for cost_data in db.get_costs_data(rental_object.id):
+				cost = Cost(*cost_data)
+				db.insert_into_ra_costs(rental_agreement_id, cost.name, cost.is_payer_landlord)
+
+			# создаем запись в таблице ra_move_in (данные Акта сдачи-приемки)
+			db.insert_into_ra_move_in(rental_agreement_id, request.form['date_of_conclusion_move_in'],
+														request.form['number_of_sets_of_keys'], 
+														request.form['number_of_keys_in_set'], 
+														request.form['rental_object_comment'], 
+														request.form['things_comment'])
+			# обновляем статус для объекта аренды
+			db.update_rental_object_status(rental_object_id, 'занят')
+			flash(f'Договор успешно заключен', category='success')
+			return redirect(url_for('landlord_rental_agreements'))
 
 	else:
 

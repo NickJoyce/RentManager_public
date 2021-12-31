@@ -10,6 +10,16 @@ class General(RentalObjectData):
 		self.cadastral_number = cadastral_number # TODO кадастровый номер объекта аренды # TODO
 		self.title_deed = title_deed # TODO документ подтверждающий право собственности
 
+	def get_empty_strings(self):
+		"""Возвращает список названий полей, данные в которых являются пустыми строками
+		   и которые используются для записи в таблицы ra_rental_object
+		"""
+		if self.title_deed == '':
+			res = ['право собственности']
+		else:
+			res = []
+
+		return res
 
 
 class ObjectData(RentalObjectData):
@@ -84,7 +94,18 @@ class Location(RentalObjectData):
 
 	def create_address(self):
 		return f'{self.city}, {self.street} {self.building_number}-{self.appt}'
-	
+
+	def get_empty_strings(self):
+		"""Возвращает список названий полей, данные в которых являются пустыми строками
+		   и которые используются для записи в таблицы ra_rental_object
+		"""
+		strs = {'город':self.city, 'улица':self.street, 'номер дома':self.building_number, 'номер квартиры':self.appt}
+		empty_strs = []
+		for name, str_ in strs.items():
+			if str_ == '':
+				empty_strs.append(name)
+		return empty_strs	
+
 
 
 

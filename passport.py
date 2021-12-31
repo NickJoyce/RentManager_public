@@ -5,7 +5,11 @@ from datetime import date
 from database.config import db_config # параметры для подключения к БД
 from database.context_manager import DBContext_Manager as DBcm # менеджер контекста
 
+from database.use_db import DataDefinition # класс для определения и модификации объектов(таблиц, базданных)
 from database.use_db import DataManipulation # класс для манипулирования данными в БД
+
+db_def = DataDefinition(db_config, DBcm)
+db = DataManipulation(db_config, DBcm) # экземпляр класса для взаимодействия с БД
 
 
 
@@ -22,7 +26,6 @@ class Passport:
 	def __init__(self, user_id, first_name, patronymic, last_name, serie, pass_number, authority, 
 					   department_code, date_of_issue, date_of_birth, place_of_birth, registration):
 		self._user_id = user_id # id пользователя
-
 		self.first_name = first_name  # имя
 		self.patronymic = patronymic # отчетсво
 		self.last_name = last_name # фамилия
@@ -34,6 +37,35 @@ class Passport:
 		self.date_of_birth = date_of_birth # дата рождения
 		self.place_of_birth = place_of_birth # место рождения
 		self.registration = registration # адрес прописки
+
+	def get_empty_strings(self):
+		"""Возвращает список названий полей, данные в которых являются пустыми строками
+		   и которые используются для записи в таблицы ra_landlord, ra_tenant, ra_agent
+		"""
+		strs = {'фамилия':self.last_name, 'имя':self.first_name, 'отчество':self.patronymic, 'серия':self.serie, 
+				 'номер':self.pass_number, 'орган выдавший паспорт':self.authority, 'прописка':self.registration}
+		empty_strs = []
+		for name, str_ in strs.items():
+			if str_ == '':
+				empty_strs.append(name)
+		return empty_strs
+
+
+
+
+
+
+
+
+if __name__ == '__main__':
+	passport = Passport(*db.get_passport_data(18))
+	print(passport.get_empty_strings())
+
+
+
+
+
+
 
 	# # Для значений в таблице обязательно должно быть соблюдено условия NOT NULL, чтобы коректно отрабатывали условия с None
 
@@ -169,58 +201,5 @@ class Passport:
 
 
 
-if __name__ == '__main__':
-	passport = Passport(1)
 
-
-	print(passport._user_id)
-	print(passport._first_name)
-	print(passport._patronymic)
-	print(passport._last_name)
-	print(passport._serie)
-	print(passport._pass_number)
-	print(passport._authority)
-	print(passport._department_code)
-	print(passport._date_of_issue)
-	print(passport._date_of_birth)
-	print(passport._place_of_birth)
-	print(passport._registration)
-
-	print(passport.user_id)
-	print(passport.first_name)
-	print(passport.patronymic)
-	print(passport.last_name)
-	print(passport.serie)
-	print(passport.pass_number)
-	print(passport.authority)
-	print(passport.department_code)
-	print(passport.date_of_issue)
-	print(passport.date_of_birth)
-	print(passport.place_of_birth)
-	print(passport.registration)
-
-	passport.first_name = 'Никита'
-	passport.patronymic = 'Алексеевич'
-	passport.last_name = 'Смирнов'
-	passport.serie = '4008'
-	passport.pass_number = '522493'
-	passport.authority = 'ТП №81'
-	passport.department_code = '380-012'
-	passport.date_of_issue = date(2008, 7, 7)
-	passport.date_of_birth = date(1988, 6, 23)
-	passport.place_of_birth = 'г. Ленинград'
-	passport.registration = 'Санкт-Петербург, ул. гороховая 32-95'
-
-	print(passport.user_id)
-	print(passport.first_name)
-	print(passport.patronymic)
-	print(passport.last_name)
-	print(passport.serie)
-	print(passport.pass_number)
-	print(passport.authority)
-	print(passport.department_code)
-	print(passport.date_of_issue)
-	print(passport.date_of_birth)
-	print(passport.place_of_birth)
-	print(passport.registration)
 
