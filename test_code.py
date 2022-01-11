@@ -1,5 +1,16 @@
-x = (1,2,3,4)
-y = (1,)
-z = x+y
+# create document
+from reportlab.pdfgen import canvas
 
-print(z)
+file_name = 'MyPdf.pdf'
+document_title = 'Document title!'
+title = 'Tasmanian devil'
+subtitle = 'subtitle subtitle subtitle'
+
+textlines = ['first line', 'second line', 'third line']
+
+image = ''
+
+
+
+
+pdf = canvas.Canvas()

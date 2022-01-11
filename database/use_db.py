@@ -560,6 +560,7 @@ class RentalAgreementDD:
 			# rental_agreements - договоры аренды
 			cursor.execute("""CREATE TABLE IF NOT EXISTS rental_agreements (id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
 																		   agreement_number VARCHAR(50),
+																		   city VARCHAR(100),
 																		   date_of_conclusion DATE DEFAULT '2000-01-01',
 																		   status VARCHAR(50),
 																		   FOREIGN KEY(status)
@@ -568,6 +569,16 @@ class RentalAgreementDD:
 															 	  		   ) ENGINE = InnoDB""" )
 			print('CREATE TABLE IF NOT EXISTS `rental_agreements`')
 
+
+			# ra_other_tenants - лица проживающие совместно с нанимателем (указывается в договоре)
+			cursor.execute("""CREATE TABLE IF NOT EXISTS ra_other_tenants (id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+																		   rental_agreement_id INT NOT NULL,
+																		   full_name VARCHAR(255),
+																		   phone VARCHAR(50),
+																		   FOREIGN KEY (rental_agreement_id)
+																				REFERENCES rental_agreements(id)
+																				ON DELETE CASCADE
+															 	  		   ) ENGINE = InnoDB""" )			
 
 
 			# LINK RENTAL AGREEMENTS WITH TENANTS
@@ -2268,6 +2279,15 @@ class RentalObgectDM:
 							  (rental_agreement_id, agent_id, last_name, first_name, patronymic, phone, 
 							   email, serie, pass_number, authority, registration))	
 
+	# INSERT INTO ra_other_tenants
+	def insert_into_ra_other_tenants(self, rental_agreement_id, name, phone):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""INSERT INTO ra_other_tenants(rental_agreement_id, full_name, phone)
+							  VALUES (%s,%s,%s)""",
+							  (rental_agreement_id, name, phone))		
+
+
+
 	# INSERT INTO ra_conditions
 	def insert_into_ra_conditions(self, rental_agreement_id, rental_rate, prepayment, deposit, late_fee, 
 										start_of_term, end_of_term, payment_day, cleaning_cost):
@@ -2690,11 +2710,11 @@ class RentalAgreementDM:
 			cursor.execute("""INSERT INTO ra_status(status) VALUES (%s)""", (status,))
 
 	"""Создание договора аренды"""
-	def create_rental_agreement(self, agreement_number, date_of_conclusion, status, landlord_id):
+	def create_rental_agreement(self, agreement_number, city, date_of_conclusion, status, landlord_id):
 		with self.context_manager(self.config) as cursor:
 			# создаем таблицу договоров аренды
-			cursor.execute("""INSERT INTO rental_agreements(agreement_number, date_of_conclusion,  status)
-						      VALUES (%s, %s, %s)""", (agreement_number, date_of_conclusion, status))
+			cursor.execute("""INSERT INTO rental_agreements(agreement_number, city, date_of_conclusion,  status)
+						      VALUES (%s, %s, %s, %s)""", (agreement_number, city, date_of_conclusion, status))
 			
 			# получаем последний добавленный в таблицу rental_agreements id
 			cursor.execute("""SELECT id FROM rental_agreements WHERE id=LAST_INSERT_ID()""") 
@@ -2734,7 +2754,7 @@ class RentalAgreementDM:
 		"""возвращает данные всех договоров аренды данного наймодателя
 		"""
 		with self.context_manager(self.config) as cursor:
-			cursor.execute("""SELECT ra.id, ra.agreement_number, ra.date_of_conclusion, ra.status 
+			cursor.execute("""SELECT ra.id, ra.agreement_number, ra.city, ra.date_of_conclusion, ra.status 
 						      FROM rental_agreements AS ra
 						      JOIN users_landlord_id_rental_agreements_id AS ulira
 						      ON ulira.rental_agreement_id=ra.id
@@ -2771,7 +2791,7 @@ class RentalAgreementDM:
 	# GET RENTAL AGREEMENT DATA
 	def get_rental_agreement_data(self, rental_agreement_id):
 		with self.context_manager(self.config) as cursor:
-			cursor.execute("""SELECT id, agreement_number, date_of_conclusion, status
+			cursor.execute("""SELECT id, agreement_number, city, date_of_conclusion, status
 							  FROM rental_agreements
 							  WHERE id=%s""", (rental_agreement_id,))
 			return [i for i in cursor.fetchall()[0]]

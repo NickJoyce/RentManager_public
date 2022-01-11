@@ -13,6 +13,8 @@ class Conditions:
 		self.end_of_term = end_of_term # конец периода аренды 
 		self.payment_day = payment_day # день оплаты
 		self.cleaning_cost = cleaning_cost # стоимость клининга
+		self.other_tenants = None # список граждан, которые будут проживать совместо с нанимателем
+
 		self.days_before_end_of_term_l = 30 # за сколько дней должен предложить наймодатель нанимателю что делать после истечения срока
 
 		self.days_before_early_termination_t = 30 # за сколько должен предупредить наниматель (досрочное расторжение)

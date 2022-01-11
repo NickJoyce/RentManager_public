@@ -31,6 +31,8 @@ from rental_agreement_data import RA_RentalObject, RA_Cost, RA_Thing, RA_Landlor
 # преобразования строк полученных из формы в другие типы
 from form_str import FormStr
 
+# генерация pdf документов
+from pdf_maker import create_ra_pdf
 
 # ВЗАИМОДЕЙСТВИЕ С БД
 from database.config import db_config # параметры для подключения к БД
@@ -1039,7 +1041,8 @@ def add_rental_agreement() -> 'html':
 				renatal_agreement_number = 142857
 
 			# создаем запись в таблице rental_agreements
-			db.create_rental_agreement(renatal_agreement_number, request.form['date_of_conclusion_agreement'], 'заключен', request.form['landlord_id'])
+			db.create_rental_agreement(renatal_agreement_number, request.form['city'], 
+									   request.form['date_of_conclusion_agreement'], 'заключен', request.form['landlord_id'])
 			# обновляем данные в session
 			session['rental_agreements'] = db.get_rental_agreement_id_of_landlord(session['landlord_id'])
 			
@@ -1068,6 +1071,16 @@ def add_rental_agreement() -> 'html':
 							 agent.passport.patronymic, agent.phone, agent.email, agent.passport.serie, 
 							 agent.passport.pass_number, agent.passport.authority, agent.passport.registration)
 
+			# создаем запись в таблице ra_other_renants (совместо проживающие с нанимателем граждане)
+			other_tenants = [
+							 [request.form['name1'], request.form['phone1']], 
+							 [request.form['name2'], request.form['phone2']],
+							 [request.form['name3'], request.form['phone3']]
+							 ]
+			for i in other_tenants:
+				if i[0]:
+					db.insert_into_ra_other_tenants(rental_agreement_id, i[0], i[1])
+
 
 			# создаем запись в таблице ra_conditions (данные условий договора аренды)
 			db.insert_into_ra_conditions(rental_agreement_id, request.form['rental_rate'], request.form['prepayment'], 
@@ -1091,6 +1104,63 @@ def add_rental_agreement() -> 'html':
 														request.form['things_comment'])
 			# обновляем статус для объекта аренды
 			db.update_rental_object_status(rental_object_id, 'занят')
+
+			# PDF
+			# преобразуем строки полученные из формы в тип datetime 
+			date_of_conclusion = datetime(*[int(i) for i in request.form['date_of_conclusion_agreement'].split('-')])
+			start_of_term = datetime(*[int(i) for i in request.form['start_of_term'].split('-')])
+			end_of_term = datetime(*[int(i) for i in request.form['end_of_term'].split('-')])
+
+			# получаем тип объекта аренды
+			rental_object_type = db.get_rental_object_type_by_id(rental_object_id)
+
+			# форматируем список other_tenants для pdf 
+			other_tenants_for_pdf = []
+			for i in other_tenants:
+				if i[0] == '':
+					other_tenants_for_pdf.append('')
+				else:
+					other_tenants_for_pdf.append(f'{i[0]}, {i[1]}')
+
+
+			# данные для создания pdf документа 'Договор найма жилого помещения'
+			ra_data = dict(	rental_agreement_number = renatal_agreement_number,
+
+						   	city = request.form['city'], 
+							date_of_conclusion = date_of_conclusion,
+							landlord = f'{landlord.passport.last_name} {landlord.passport.first_name} {landlord.passport.patronymic}',
+							tenant = f'{tenant.passport.last_name} {tenant.passport.first_name} {tenant.passport.patronymic}',
+							title_deed = f"{rental_object.general.title_deed}",
+							renatal_object_type = rental_object_type,
+							address = f'{rental_object.location.address}',
+							other_tenants = other_tenants_for_pdf,
+							rental_rate = f"{int(request.form['rental_rate'])}",
+							payment_day = f"{int(request.form['payment_day'])}", 
+							deposit = f"{int(request.form['deposit'])}", 
+							costs = ['коммунальные услуги', 'электроэнергия', 'капитальный ремонт', 'интернет', 'газ'],
+							cleaning_cost = f"{int(request.form['cleaning_cost'])}", 
+							start_of_term = start_of_term,
+							end_of_term = end_of_term,
+							late_fee = f"{int(request.form['late_fee'])}",
+
+							l_serie = f'{landlord.passport.serie}',
+							l_pass_number = f'{landlord.passport.pass_number}',
+							l_authority = f'{landlord.passport.authority}',
+							l_registration = f'{landlord.passport.registration}',
+							l_phone = f'{landlord.phone}',
+							l_email = f'{landlord.email}',
+
+							t_serie = f'{tenant.passport.serie}',
+							t_pass_number = f'{tenant.passport.pass_number}',
+							t_authority = f'{tenant.passport.authority}',
+							t_registration = f'{tenant.passport.registration}',
+							t_phone = f'{tenant.phone}',
+							t_email = f'{tenant.email}')
+
+
+			# создаем pdf документ 'Договор найма жилого помещения'
+			create_ra_pdf(**ra_data)
+
 			flash(f'Договор успешно заключен', category='success')
 			return redirect(url_for('landlord_rental_agreements'))
 
@@ -1225,7 +1295,10 @@ def rental_agreement_documents(rental_agreement_id) -> 'html':
 			for data in db.get_ra_renewal(rental_agreement_id):
 				rental_agreement.renewal.append(Renewal(*data))
 
-			return render_template('rental_agreement_documents.html', the_title=the_title, user_name=session['user_name'], rental_agreement=rental_agreement)
+			ra_pdf_file = f'pdf/rental_agreements/ra_{rental_agreement.agreement_number}.pdf'
+
+			return render_template('rental_agreement_documents.html', the_title=the_title, user_name=session['user_name'], 
+									rental_agreement=rental_agreement, ra_pdf_file=ra_pdf_file)
 
 	else:
 		abort(401)

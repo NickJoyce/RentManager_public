@@ -19,7 +19,10 @@
 			<input type="hidden" value="{{ landlord_id }}" name='landlord_id'/>
 			<div class='add_ra_form_header'><div>{{the_title}}</div></div>
 
+			<h4>Дата и место заключения договора</h4>
 			<div class='add_ra_form'>
+				<div class="add_ra_text">Город</div> 
+				<div><input type='text'  class='item_input' name = "city"></div>
 				<div class="add_ra_text">Дата заключения</div> 
 				<div><input type='DATE'  class='item_input' name = "date_of_conclusion_agreement"></div>
 			</div>
@@ -54,9 +57,28 @@
 				</div>	
 			</div>
 
-			<h4>Агент</h4>
+<!-- 			<h4>Агент</h4>
 			<div class='add_ra_comment'>Определение агента участвующего в сделке,<br>
-			производится до заключения договора в разделе: Объекты аренды > Агент</div>
+			производится до заключения договора в разделе: Объекты аренды > Агент</div> -->
+
+			<h4>Граждане, которые будут проживать совместо с нанимателем</h4>
+			<div class='other_tenants'>
+				<table>
+					<tr><th>ФИО</th><th>Телефон</th></tr>
+					<tr>
+						<td><input type='TEXT'  class='item_input' autocomplete="off" name = "name1"  value=''></td>
+						<td><input type='TEXT'  class='item_input' autocomplete="off" name = "phone1" value=''></td>
+					</tr>
+					<tr>
+						<td><input type='TEXT'  class='item_input' autocomplete="off" name = "name2" value=''></td>
+						<td><input type='TEXT'  class='item_input' autocomplete="off" name = "phone2" value=''></td>
+					</tr>
+					<tr>
+						<td><input type='TEXT'  class='item_input' autocomplete="off" name = "name3" value=''></td>
+						<td><input type='TEXT'  class='item_input' autocomplete="off" name = "phone3" value=''></td>
+					</tr>
+				</table>
+			</div>
 
 
 			<h4>Условия договора</h4>
@@ -85,7 +107,7 @@
 				<div class="add_ra_text">Стоимость клининга</div> 
 				<div><input type='TEXT' autocomplete="off" class='item_input' name = "cleaning_cost" ></div>
 			</div>
-
+<!-- 
 			<h4>Расходы на содержание</h4>
 			<div class='add_ra_comment'>Редактирование Расходов на содержание,<br>
 			для добавляемого объекта аренды, производится <br>
@@ -94,7 +116,7 @@
 			<h4>Опись имущества</h4>
 			<div class='add_ra_comment'>Редактирование Описи имущества,<br>
 			для добавляемого объекта аренды, производится<br> 
-			до заключения договора в разделе: Объекты аренды > Вещи</div>
+			до заключения договора в разделе: Объекты аренды > Вещи</div> -->
 
 			<h4>Акт сдачи-приемки</h4>
 			<div class='add_ra_form'>

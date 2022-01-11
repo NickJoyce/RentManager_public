@@ -27,8 +27,11 @@
 	<!-- TAB CONTENT -->
 	<!-- agreement -->
 	<div id="agreement" class="tabcontent">
+
+		<object data="{{ url_for('static', filename=ra_pdf_file) }}" type='application/pdf' width="100%" height="600px" ></object>
+
 		<div class='form_wrapper'>
-			<input type="hidden" value="info_tab" name='source'/>		
+			<input type="hidden" value="info_tab" name='source'/>
 			<h4>1</h4>
 			<p>Номер: {{ rental_agreement.agreement_number }}</p>
 			<p>Текущий статус: {{ rental_agreement.status }}</p>

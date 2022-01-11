@@ -51,6 +51,8 @@ class Participant:
 		self.authority = authority
 		self.registration = registration
 
+	
+
 
 
 class RA_Landlord(Participant):
