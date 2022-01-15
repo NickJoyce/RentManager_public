@@ -7,11 +7,12 @@ from rental_agreement_data import RA_RentalObject, RA_Cost, RA_Thing, RA_Landlor
 
 
 class RentalAgreement:
-	def __init__(self, id_, agreement_number, city, date_of_conclusion, status): 
+	def __init__(self, id_, agreement_number, datetime_of_creation, city, date_of_conclusion, status): 
 				
 		# |T|> rental_agreement
 		self.id = id_# id договора
 		self.agreement_number = agreement_number # номер договора аренда
+		self.datetime_of_creation = datetime_of_creation # дата и время создания
 		self.city = city # город в котором заключен договор
 		self.date_of_conclusion = date_of_conclusion # дата заключения договора
 		self.status = status # статус договора ['черновик', 'заключен', 'досрочно расторгнут', 'завершен', 'продлен'] 
@@ -46,10 +47,11 @@ class RentalAgreement:
 		self.renewal = None # список экземпляров Renewal, список дат заключения соглашения и  дат окончания срока действия договора (при продлении)
 
 
-
-		def create_ra_pdf(self):
-			...
-
+	def anti_cache_part_of_pdf_name(self):
+		res = [self.datetime_of_creation.day, self.datetime_of_creation.month, self.datetime_of_creation.year,
+			   self.datetime_of_creation.hour,self.datetime_of_creation.minute,self.datetime_of_creation.second]
+		res = [str(i) for i in res]
+		return ''.join(res)
 
 
 
@@ -65,11 +67,12 @@ class RentalAgreement:
 
 
 if __name__ == '__main__':
+	...
 
  
 
-	x = RentalAgreement(1)
-	print(x.agreement_number)
+	# x = RentalAgreement(1)
+	# print(x.agreement_number)
 
 
 # # ВЗАИМОДЕЙСТВИЕ С БД
@@ -175,16 +178,3 @@ if __name__ == '__main__':
 # 		self.db.set_rental_agreements_agreement_number(self.rental_object_id, value)
 # 		self._agreement_number = value
 
-
-
-
-
-	
-
-
-
-
-
-
-	
-	

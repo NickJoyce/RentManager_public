@@ -560,6 +560,7 @@ class RentalAgreementDD:
 			# rental_agreements - договоры аренды
 			cursor.execute("""CREATE TABLE IF NOT EXISTS rental_agreements (id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
 																		   agreement_number VARCHAR(50),
+																		   datetime_of_creation = DATETIME,
 																		   city VARCHAR(100),
 																		   date_of_conclusion DATE DEFAULT '2000-01-01',
 																		   status VARCHAR(50),
@@ -2710,11 +2711,14 @@ class RentalAgreementDM:
 			cursor.execute("""INSERT INTO ra_status(status) VALUES (%s)""", (status,))
 
 	"""Создание договора аренды"""
-	def create_rental_agreement(self, agreement_number, city, date_of_conclusion, status, landlord_id):
+	def create_rental_agreement(self, agreement_number, datetime_of_creation, city, 
+									  date_of_conclusion, status, landlord_id):
 		with self.context_manager(self.config) as cursor:
 			# создаем таблицу договоров аренды
-			cursor.execute("""INSERT INTO rental_agreements(agreement_number, city, date_of_conclusion,  status)
-						      VALUES (%s, %s, %s, %s)""", (agreement_number, city, date_of_conclusion, status))
+			cursor.execute("""INSERT INTO rental_agreements(agreement_number, datetime_of_creation,  
+													        city, date_of_conclusion,  status)
+						      VALUES (%s, %s, %s, %s, %s)""", 
+						      (agreement_number, datetime_of_creation, city, date_of_conclusion, status))
 			
 			# получаем последний добавленный в таблицу rental_agreements id
 			cursor.execute("""SELECT id FROM rental_agreements WHERE id=LAST_INSERT_ID()""") 
@@ -2754,7 +2758,8 @@ class RentalAgreementDM:
 		"""возвращает данные всех договоров аренды данного наймодателя
 		"""
 		with self.context_manager(self.config) as cursor:
-			cursor.execute("""SELECT ra.id, ra.agreement_number, ra.city, ra.date_of_conclusion, ra.status 
+			cursor.execute("""SELECT ra.id, ra.agreement_number, ra.datetime_of_creation, 
+									ra.city, ra.date_of_conclusion, ra.status 
 						      FROM rental_agreements AS ra
 						      JOIN users_landlord_id_rental_agreements_id AS ulira
 						      ON ulira.rental_agreement_id=ra.id
@@ -2791,7 +2796,7 @@ class RentalAgreementDM:
 	# GET RENTAL AGREEMENT DATA
 	def get_rental_agreement_data(self, rental_agreement_id):
 		with self.context_manager(self.config) as cursor:
-			cursor.execute("""SELECT id, agreement_number, city, date_of_conclusion, status
+			cursor.execute("""SELECT id, agreement_number, datetime_of_creation, city, date_of_conclusion, status
 							  FROM rental_agreements
 							  WHERE id=%s""", (rental_agreement_id,))
 			return [i for i in cursor.fetchall()[0]]
@@ -2868,13 +2873,6 @@ class RentalAgreementDM:
 							  WHERE rental_agreement_id=%s""", (rental_agreement_id,))
 			return cursor.fetchall()[0]
 
-	# GET RENEWAL DATA (CURRENT RENATAL AGREEMENT)
-	def get_ra_renewal(self, rental_agreement_id):
-		with self.context_manager(self.config) as cursor:
-			cursor.execute("""SELECT rental_agreement_id, date_of_conclusion, end_of_term
-							  FROM ra_renewal
-							  WHERE rental_agreement_id=%s""", (rental_agreement_id,))
-			return cursor.fetchall()
 
 	# GET THINGS DATA (CURRENT RENATAL AGREEMENT)
 	def get_ra_things(self, rental_agreement_id):
@@ -2905,30 +2903,23 @@ class RentalAgreementDM:
 
 
 	# GET ATTRIBUTES [rental_agreements]: ['agent_id', 'landlord_id', 'tenant_id', 'rental_object_id', 'agreement_number', ]
-	def get_rental_agreements_agent_id(self, rental_agreement_id):
-		with self.context_manager(self.config) as cursor:
-			cursor.execute("""SELECT agent_id FROM rental_agreements WHERE id=%s""", (rental_agreement_id,))
-			return cursor.fetchall()[0][0]
-
-	def get_rental_agreements_landlord_id(self, rental_agreement_id):
-		with self.context_manager(self.config) as cursor:
-			cursor.execute("""SELECT landlord_id FROM rental_agreements WHERE id=%s""", (rental_agreement_id,))
-			return cursor.fetchall()[0][0]
-
-	def get_rental_agreements_tenant_id(self, rental_agreement_id):
-		with self.context_manager(self.config) as cursor:
-			cursor.execute("""SELECT tenant_id FROM rental_agreements WHERE id=%s""", (rental_agreement_id,))
-			return cursor.fetchall()[0][0]
-
-	def get_rental_agreements_rental_object_id(self, rental_agreement_id):
-		with self.context_manager(self.config) as cursor:
-			cursor.execute("""SELECT rental_object_id FROM rental_agreements WHERE id=%s""", (rental_agreement_id,))
-			return cursor.fetchall()[0][0]
-
 	def get_rental_agreements_agreement_number(self, rental_agreement_id):
 		with self.context_manager(self.config) as cursor:
 			cursor.execute("""SELECT agreement_number FROM rental_agreements WHERE id=%s""", (rental_agreement_id,))
 			return cursor.fetchall()[0][0]		
+
+	def get_rental_agreement_city(self, rental_agreement_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT city FROM rental_agreements WHERE id=%s""", (rental_agreement_id,))
+			return cursor.fetchall()[0][0]	
+
+	def get_rental_agreements_date_of_conclusion(self, rental_agreement_id):
+		with self.context_manager(self.config) as cursor:
+			cursor.execute("""SELECT date_of_conclusion FROM rental_agreements WHERE id=%s""", (rental_agreement_id,))
+			return cursor.fetchall()[0][0]
+
+
+
 
 
 	# GET ATTRIBUTES [ra_conditions]: ['rental_rate', 'prepayment', 'deposit', 'late_fee', 'start_of_term', 'end_of_term', 'ayment_day']

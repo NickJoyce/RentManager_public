@@ -1,6 +1,7 @@
 from werkzeug.security import generate_password_hash, check_password_hash 
 import os
 import json
+import random
 
 # ------------------------------------------------------------------------------------------------------------------------------
 from flask import Flask, render_template, request, url_for, redirect, session, flash, abort,make_response # импортируем функции модуля flask
@@ -32,7 +33,7 @@ from rental_agreement_data import RA_RentalObject, RA_Cost, RA_Thing, RA_Landlor
 from form_str import FormStr
 
 # генерация pdf документов
-from pdf_maker import create_ra_pdf
+from pdf_maker import create_ra_pdf, create_things_pdf, create_move_in_pdf, create_move_out_pdf, create_termination_pdf
 
 # ВЗАИМОДЕЙСТВИЕ С БД
 from database.config import db_config # параметры для подключения к БД
@@ -907,18 +908,6 @@ def landlord_rental_agreements() -> 'html':
 		# подгружаем данные условий текущего договора 
 		rental_agreement.conditions = Conditions(*db.get_ra_conditions_data(rental_agreement.id))
 
-		# Получаем даты продлений
-		renewal_dates = []
-		for data in db.get_ra_renewal(rental_agreement.id):
-			renewal_dates.append(Renewal(*data).end_of_term)
-
-		# если договор продлевался
-		if renewal_dates:
-			# то меняем дату окончания договора в экземпляре класса Conditions
-			rental_agreement.conditions.end_of_term = max(renewal_dates)
-			# расчитываем новое количество оставшихся дней
-			rental_agreement.conditions.days_left = rental_agreement.conditions.get_days_left()
-
 		if rental_agreement.status == 'заключен' or rental_agreement.status == 'продлен':
 			rental_agreements.append(rental_agreement)
 
@@ -963,17 +952,6 @@ def landlord_rental_agreements_archive() -> 'html':
 							landlord_id=session['landlord_id'])
 
 
-
-
-
-
-
-
-
-
-
-
-#todo
 @application.route('/add_rental_agreement', methods=['POST','GET']) 
 @logged_in_landlord
 def add_rental_agreement() -> 'html':
@@ -1040,8 +1018,11 @@ def add_rental_agreement() -> 'html':
 			else:
 				renatal_agreement_number = 142857
 
+			# получаем текщую дату и время (без микросекунд)
+			datetime_of_creation = datetime.now().replace(microsecond=0)
+
 			# создаем запись в таблице rental_agreements
-			db.create_rental_agreement(renatal_agreement_number, request.form['city'], 
+			db.create_rental_agreement(renatal_agreement_number, datetime_of_creation, request.form['city'], 
 									   request.form['date_of_conclusion_agreement'], 'заключен', request.form['landlord_id'])
 			# обновляем данные в session
 			session['rental_agreements'] = db.get_rental_agreement_id_of_landlord(session['landlord_id'])
@@ -1071,7 +1052,7 @@ def add_rental_agreement() -> 'html':
 							 agent.passport.patronymic, agent.phone, agent.email, agent.passport.serie, 
 							 agent.passport.pass_number, agent.passport.authority, agent.passport.registration)
 
-			# создаем запись в таблице ra_other_renants (совместо проживающие с нанимателем граждане)
+			# создаем запись в таблице ra_other_tenants (совместо проживающие с нанимателем граждане)
 			other_tenants = [
 							 [request.form['name1'], request.form['phone1']], 
 							 [request.form['name2'], request.form['phone2']],
@@ -1087,8 +1068,12 @@ def add_rental_agreement() -> 'html':
 										 request.form['deposit'], request.form['late_fee'], request.form['start_of_term'], 
 										 request.form['end_of_term'], request.form['payment_day'], request.form['cleaning_cost'])
 			# создаем запись в таблице ra_things (фиксированные данные описи имущества в договоре)
+			# создаем список для pdf документа
+
+			things_for_pdf = [('№', 'Наименование предмета', 'Кол-во, шт', 'Стоимость ед., руб.')]
 			for thing_data in db.get_things(rental_object.id):
 				thing = Thing(*thing_data)
+				things_for_pdf.append((thing.thing_number, thing.thing_name, thing.amount, thing.cost))
 				db.insert_into_ra_things(rental_agreement_id, thing.thing_number, thing.thing_name, thing.amount, thing.cost)
 
 			# создаем запись в таблице ra_costs (фиксированные данные расходов на содержание в договоре)
@@ -1105,7 +1090,7 @@ def add_rental_agreement() -> 'html':
 			# обновляем статус для объекта аренды
 			db.update_rental_object_status(rental_object_id, 'занят')
 
-			# PDF
+			# PDF: ДОГОВОР НАЙМА ЖИЛОГО ПОМЕЩЕНИЯ
 			# преобразуем строки полученные из формы в тип datetime 
 			date_of_conclusion = datetime(*[int(i) for i in request.form['date_of_conclusion_agreement'].split('-')])
 			start_of_term = datetime(*[int(i) for i in request.form['start_of_term'].split('-')])
@@ -1122,10 +1107,19 @@ def add_rental_agreement() -> 'html':
 				else:
 					other_tenants_for_pdf.append(f'{i[0]}, {i[1]}')
 
+			# определяем часть имени pdf файла для того чтобы повторно созданный файл с
+			# тем же номером заказа не кешировался браузером
+			ra = RentalAgreement(None, None, datetime_of_creation, None, None,None)
+			ra.datetime_of_creation = datetime_of_creation
+			anti_cache_part_of_pdf_name = ra.anti_cache_part_of_pdf_name()
+
+			# определяем имя и расположение pdf файла
+			ra_pdf = f"static/pdf/rental_agreements/ra_{anti_cache_part_of_pdf_name}_{renatal_agreement_number}.pdf"
+
 
 			# данные для создания pdf документа 'Договор найма жилого помещения'
-			ra_data = dict(	rental_agreement_number = renatal_agreement_number,
-
+			ra_data = dict(	pdf_name = ra_pdf,
+							rental_agreement_number = renatal_agreement_number,
 						   	city = request.form['city'], 
 							date_of_conclusion = date_of_conclusion,
 							landlord = f'{landlord.passport.last_name} {landlord.passport.first_name} {landlord.passport.patronymic}',
@@ -1157,9 +1151,40 @@ def add_rental_agreement() -> 'html':
 							t_phone = f'{tenant.phone}',
 							t_email = f'{tenant.email}')
 
-
 			# создаем pdf документ 'Договор найма жилого помещения'
 			create_ra_pdf(**ra_data)
+
+			# определяем имя и расположение pdf файла
+			things_pdf = f"static/pdf/things/things_{anti_cache_part_of_pdf_name}_{renatal_agreement_number}.pdf"			
+
+			# PDF: ОПИСЬ ИМУЩЕСТВА
+			things_data = dict(pdf_name = things_pdf,
+							   rental_agreement_number = renatal_agreement_number,
+							   city = request.form['city'],
+							   date_of_conclusion = date_of_conclusion,
+							   things = things_for_pdf)
+
+			create_things_pdf(**things_data)
+
+			# PDF: АКТ СДАЧИ-ПРИЕМКИ
+			# преобразуем строки полученные из формы в тип datetime 			
+			date_of_conclusion_move_in = datetime(*[int(i) for i in request.form['date_of_conclusion_move_in'].split('-')])
+
+
+			# определяем имя и расположение pdf файла
+			move_in_pdf = f"static/pdf/move_in/move_in_{anti_cache_part_of_pdf_name}_{renatal_agreement_number}.pdf"		
+
+			move_in_data = dict(pdf_name = move_in_pdf,
+								rental_agreement_number=renatal_agreement_number,
+								city = request.form['city'],
+								date_of_conclusion_move_in = date_of_conclusion_move_in,
+								date_of_conclusion = date_of_conclusion,
+								number_of_sets_of_keys = request.form['number_of_sets_of_keys'],
+								number_of_keys_in_set = request.form['number_of_keys_in_set'],
+								rental_object_comment = request.form['rental_object_comment'],
+								things_comment = request.form['things_comment'])
+
+			create_move_in_pdf(**move_in_data)
 
 			flash(f'Договор успешно заключен', category='success')
 			return redirect(url_for('landlord_rental_agreements'))
@@ -1197,23 +1222,46 @@ def add_rental_agreement() -> 'html':
 @logged_in_landlord
 def delete_rental_agreement() -> 'html':
 	rental_agreement_id = request.form['rental_agreement_id'] 
-	# получаем статус удаляемого договора
-	ra_status = RentalAgreement(*db.get_rental_agreement_data(rental_agreement_id)).status
-	print(ra_status)
+
+	# создаем экземпляр класса RentalAgreement
+	ra = RentalAgreement(*db.get_rental_agreement_data(rental_agreement_id))
+
 	# меняем статус объекта аренды который указан в договоре на 'свободен'
-	if ra_status == 'заключен' or ra_status == 'продлен':
+	if ra.status == 'заключен' or ra.status == 'продлен':
 		rental_object_id = RA_RentalObject(*db.get_ra_rental_object_data(rental_agreement_id)).rental_object_id
-		print(rental_object_id)
 		db.update_rental_object_status(rental_object_id, 'свободен')
 	else:
 		pass
+
+	# получим anti-cache часть имени pdf файла
+	anti_cache_part_of_pdf_name = ra.anti_cache_part_of_pdf_name()
+
 	# удаляем договор
-	db.delete_rental_agreement(request.form['rental_agreement_id'])
+	os.remove(f'static/pdf/rental_agreements/ra_{anti_cache_part_of_pdf_name }_{ra.agreement_number}.pdf')
+	# удаляем опись имущества
+	os.remove(f'static/pdf/things/things_{anti_cache_part_of_pdf_name }_{ra.agreement_number}.pdf')
+	# удаляем акт сдачи-приемки
+	os.remove(f'static/pdf/move_in/move_in_{anti_cache_part_of_pdf_name }_{ra.agreement_number}.pdf')
+
+	# удаляем акт возврата (его может не быть)
+	try:
+		os.remove(f'static/pdf/move_out/move_out_{anti_cache_part_of_pdf_name }_{ra.agreement_number}.pdf')
+	except:
+		pass
+	# удаляем соглашение о расторжении (его может не быть)
+	try:
+		os.remove(f'static/pdf/termination/termination_{anti_cache_part_of_pdf_name }_{ra.agreement_number}.pdf')
+	except:
+		pass
+
+	# удаляем договор в БД (связанные таблицы удаляются из-за DELETE CASCADE)
+	db.delete_rental_agreement(rental_agreement_id)
+
 	# обновляем данные в session
 	session['rental_agreements'] = db.get_rental_agreement_id_of_landlord(session['landlord_id'])
 	flash(f'Договор успешно удален', category='success')
 
-
+	# возвращаемся на страницу на которой было произведено удаление
 	if request.form['source'] == 'current':
 		return redirect(url_for('landlord_rental_agreements'))
 	elif request.form['source'] == 'archive':
@@ -1229,76 +1277,82 @@ def rental_agreement_documents(rental_agreement_id) -> 'html':
 	the_title = 'Договор'
 	if rental_agreement_id in session['rental_agreements']:
 		the_title = 'Договор'
-		if request.method == 'POST':
-			if request.form['source'] == 'info_tab':
-				...
-			if request.form['source'] == 'conditions_tab':
-				...
 
-			...
-		else:
-			rental_agreement_data = db.get_rental_agreement_data(rental_agreement_id)
-			rental_agreement = RentalAgreement(*rental_agreement_data)
+		rental_agreement_data = db.get_rental_agreement_data(rental_agreement_id)
+		rental_agreement = RentalAgreement(*rental_agreement_data)
 
-			# ОБЪЕКТ АРЕНДЫ
-			rental_agreement.rental_object = RA_RentalObject(*db.get_ra_rental_object_data(rental_agreement_id))
+		# ОБЪЕКТ АРЕНДЫ
+		rental_agreement.rental_object = RA_RentalObject(*db.get_ra_rental_object_data(rental_agreement_id))
 
-			# ОПИСЬ ИМУЩЕСТВА 
-			rental_agreement.things =  [RA_Thing(*thing) for thing in db.get_ra_things(rental_agreement_id)]
-			# RA_Thing()
+		# ОПИСЬ ИМУЩЕСТВА 
+		rental_agreement.things =  [RA_Thing(*thing) for thing in db.get_ra_things(rental_agreement_id)]
+		# RA_Thing()
 
 
-			# ЗАТРАТЫ НА СОДЕРЖАНИЕ
-			rental_agreement.costs = [RA_Cost(*cost) for cost in db.get_ra_costs(rental_agreement_id)]	
+		# ЗАТРАТЫ НА СОДЕРЖАНИЕ
+		rental_agreement.costs = [RA_Cost(*cost) for cost in db.get_ra_costs(rental_agreement_id)]	
 
 
-			# НАЙМОДАТЕЛЬ
-			# получаем данные наймодателя зафиксированные в договоре
-			rental_agreement.lanlord = RA_Landlord(rental_agreement_id, *db.get_ra_landlord_data(rental_agreement_id))
+		# НАЙМОДАТЕЛЬ
+		# получаем данные наймодателя зафиксированные в договоре
+		rental_agreement.lanlord = RA_Landlord(rental_agreement_id, *db.get_ra_landlord_data(rental_agreement_id))
 
 
 
-			# НАНИМАТЕЛЬ
-			# получаем данные нанимателя зафиксированные в договоре
-			rental_agreement.tenant = RA_Tenant(rental_agreement_id, *db.get_ra_tenant_data(rental_agreement_id))
+		# НАНИМАТЕЛЬ
+		# получаем данные нанимателя зафиксированные в договоре
+		rental_agreement.tenant = RA_Tenant(rental_agreement_id, *db.get_ra_tenant_data(rental_agreement_id))
 
 
 
-			# АГЕНТ
-			# получаем данные нанимателя зафиксированные в договоре
-			try:
-				rental_agreement.agent = RA_Agent(rental_agreement_id, *db.get_ra_agent_data(rental_agreement_id))
-			except:
-				pass
+		# АГЕНТ
+		# получаем данные нанимателя зафиксированные в договоре
+		try:
+			rental_agreement.agent = RA_Agent(rental_agreement_id, *db.get_ra_agent_data(rental_agreement_id))
+		except:
+			pass
 
-			# УСЛОВИЯ ДОГОВОРА
-			# создаем экземпляр класса Conditions внутри RentalAgreement
-			rental_agreement.conditions = Conditions(*db.get_ra_conditions_data(rental_agreement_id))
+		# УСЛОВИЯ ДОГОВОРА
+		# создаем экземпляр класса Conditions внутри RentalAgreement
+		rental_agreement.conditions = Conditions(*db.get_ra_conditions_data(rental_agreement_id))
 
-			# АКТ СДАЧИ-ПРИЕМКИ
-			rental_agreement.move_in = MoveIn(*db.get_ra_move_in_data(rental_agreement_id))
+		# АКТ СДАЧИ-ПРИЕМКИ
+		rental_agreement.move_in = MoveIn(*db.get_ra_move_in_data(rental_agreement_id))
 
-			# АКТ ВОЗВРАТА		
-			try:
-				rental_agreement.move_out = MoveOut(*db.get_ra_move_out_data(rental_agreement_id))
-			except:
-				pass
+		# АКТ ВОЗВРАТА		
+		try:
+			rental_agreement.move_out = MoveOut(*db.get_ra_move_out_data(rental_agreement_id))
+		except:
+			pass
 
-			# ДОСРОЧНОЕ РАСТОРЖЕНИЕ
-			try:
-				rental_agreement.termination = Termination(*db.get_ra_termination(rental_agreement_id))
-			except:
-				pass
+		# ДОСРОЧНОЕ РАСТОРЖЕНИЕ
+		try:
+			rental_agreement.termination = Termination(*db.get_ra_termination(rental_agreement_id))
+		except:
+			pass
 
-			# ДОСРОЧНОЕ ПРОДЛЕНИЕ		
-			rental_agreement.renewal = []
-			for data in db.get_ra_renewal(rental_agreement_id):
-				rental_agreement.renewal.append(Renewal(*data))
+		# добавляем anti_cache часть имени
+		anti_cache_part_of_pdf_name = rental_agreement.anti_cache_part_of_pdf_name()
 
-			ra_pdf_file = f'pdf/rental_agreements/ra_{rental_agreement.agreement_number}.pdf'
+		# пути к документам
+		ra_pdf = f'pdf/rental_agreements/ra_{anti_cache_part_of_pdf_name}_{rental_agreement.agreement_number}.pdf'
+		things_pdf = f'pdf/things/things_{anti_cache_part_of_pdf_name}_{rental_agreement.agreement_number}.pdf'
+		move_in_pdf = f'pdf/move_in/move_in_{anti_cache_part_of_pdf_name}_{rental_agreement.agreement_number}.pdf'
+		move_out_pdf = f'pdf/move_out/move_out_{anti_cache_part_of_pdf_name}_{rental_agreement.agreement_number}.pdf'
+		termination_pdf = f'pdf/termination/termination_{anti_cache_part_of_pdf_name}_{rental_agreement.agreement_number}.pdf'
 
-			return render_template('rental_agreement_documents.html', the_title=the_title, user_name=session['user_name'], 
-									rental_agreement=rental_agreement, ra_pdf_file=ra_pdf_file)
+
+		response = make_response(render_template('rental_agreement_documents.html', the_title=the_title, user_name=session['user_name'], 
+								rental_agreement=rental_agreement, ra_pdf=ra_pdf, things_pdf=things_pdf, move_in_pdf =move_in_pdf,
+								move_out_pdf=move_out_pdf, termination_pdf=termination_pdf))
+
+		# запрещаем кеширование
+		response.headers["Cache-Control"] = "private, max-age=0, no-cache"
+		response.headers["Expires"] = '0'
+		response.headers["Pragma"] = "no-cache"	
+		response.headers["ETag"] = 	f'{random.randint(1, 1000)}'
+		return response
+
 
 	else:
 		abort(401)
@@ -1346,6 +1400,42 @@ def terminate_rental_agreement() -> 'html':
 						   request.form['cleaning'], request.form['rental_agreeement_debts'], 
 						   request.form['deposit_refund'], request.form['prepayment_refund'])
 
+
+
+
+	# PDF: АКТ ВОЗВРАТА
+	# создаем экземпляр класса RentalAgreement
+	ra = RentalAgreement(*db.get_rental_agreement_data(rental_agreement_id))
+
+	# преобразуем строку даты подписания акта возврата полученную из формы в тип datetime 			
+	date_of_conclusion_move_out = datetime(*[int(i) for i in request.form['date_of_conclusion_move'].split('-')])
+	
+	# определяем часть имени pdf файла для того чтобы повторно созданный файл с
+	# тем же номером заказа не кешировался браузером
+	anti_cache_part_of_pdf_name = ra.anti_cache_part_of_pdf_name()
+
+	# определяем имя и расположение pdf файла
+	ra_pdf = f"static/pdf/move_out/move_out_{anti_cache_part_of_pdf_name}_{ra.agreement_number}.pdf"
+
+	move_out_data = dict(pdf_name = ra_pdf,
+						 city = ra.city,
+					     date_of_conclusion_move_out = date_of_conclusion_move_out,
+						 rental_agreement_number=ra.agreement_number,
+						 date_of_conclusion = ra.date_of_conclusion,
+					   	 number_of_sets_of_keys = request.form['number_of_sets_of_keys'],
+					   	 number_of_keys_in_set = request.form['number_of_keys_in_set'],
+					   	 rental_object_comment = request.form['rental_object_comment'],
+					   	 things_comment = request.form['things_comment'],
+						 damage_cost = request.form['damage_cost'],
+						 rental_agreeement_debts = request.form['rental_agreeement_debts'],						 
+						 cleaning = request.form['cleaning'],
+						 deposit_refund = request.form['deposit_refund'],
+						 prepayment_refund = request.form['prepayment_refund'])
+
+	create_move_out_pdf(**move_out_data)
+
+
+
 	# если завершение в связи с окончанием срока действия договора
 	if request.form['source'] == 'termination':
 		# обновляем статус в таблице rental_agreements
@@ -1362,62 +1452,47 @@ def terminate_rental_agreement() -> 'html':
 		# обновляем статус в таблице rental_agreements
 		db.update_rental_agreements_status(rental_agreement_id, 'досрочно расторгнут')
 
+		# PDF: СОГЛАШЕНИЕ О РАСТОРЖЕНИИ
+		# преобразуем строки полученные из формы в тип datetime 			
+		date_of_conclusion_early_term = datetime(*[int(i) for i in request.form['date_of_conclusion_early_term'].split('-')])
+		notice_date = datetime(*[int(i) for i in request.form['notice_date'].split('-')])
+		end_of_term = datetime(*[int(i) for i in request.form['end_of_term'].split('-')])
+
+
+		# получим полные имена наймодателя и нанимателя
+		landlord = RA_Landlord(None, *db.get_ra_landlord_data(rental_agreement_id))
+		tenant = RA_Tenant(None, *db.get_ra_tenant_data(rental_agreement_id))
+		l_name = f"{landlord.last_name} {landlord.first_name} {landlord.patronymic}"
+		t_name = f"{tenant.last_name} {tenant.first_name} {tenant.patronymic}"
+
+
+		# определяем имя и расположение pdf файла
+		ra_pdf = f"static/pdf/termination/termination_{anti_cache_part_of_pdf_name}_{ra.agreement_number}.pdf"
+
+
+		termination_data = dict(pdf_name = ra_pdf,
+								rental_agreement_number=ra.agreement_number,
+						    	date_of_conclusion = ra.date_of_conclusion,
+								city = ra.city,
+					     		date_of_conclusion_early_term = date_of_conclusion_early_term,
+					     		landlord = l_name,
+					     		tenant = t_name,
+								end_of_term	= end_of_term,
+								is_landlord_initiator = request.form['is_landlord_initiator'],
+					     		notice_date	 = notice_date)
+
+		create_termination_pdf(**termination_data)
+
+
 		flash(f'Договор успешно досрочно расторгнут', category='success')
 
 	# получим rental_object_id для договора аренды 
 	rental_object_id =  RA_RentalObject(*db.get_ra_rental_object_data(rental_agreement_id )).rental_object_id
 	# меняем статус у объекта аренды
 	db.update_rental_object_status(rental_object_id, 'свободен')
+
 	# возвращаемся на страницу landlord_rental_agreements 
 	return redirect(url_for('landlord_rental_agreements_archive'))
-
-
-
-@application.route('/renew_rental_agreement/<int:rental_agreement_id>', methods=['POST','GET']) 
-@logged_in_landlord
-def renew_rental_agreement(rental_agreement_id) -> 'html':
-	if request.method == 'POST':
-		
-		# преобразуем стоку полученную из формы в дату
-		form_str = FormStr(request.form['end_of_term'])
-		end_of_term = form_str.transform_to_date()  
-
-		# создаем экземпляр класса Renewal
-		renewal = Renewal(rental_agreement_id, request.form['date_of_conclusion'], end_of_term)
-
-		# определяем дату окончания действия договора до продления
-		# получаем даты продлений
-		renewal_dates = []
-		for data in db.get_ra_renewal(rental_agreement_id):
-			renewal_dates.append(Renewal(*data).end_of_term)
-		# если договор продлевался, то берется последняя (максимальная дата)
-		if renewal_dates:
-			renewal.end_of_term_before = max(renewal_dates)			
-		# если договор не продлевался то берется дата окончания в соответствии с договором 
-		else:
-			conditions = Conditions(*db.get_ra_conditions_data(rental_agreement_id))
-			renewal.end_of_term_before = conditions.end_of_term			
-
-		# позже ли идет дата до которой продлевается, текущей даты окончания действия
-		is_correct_date = renewal.check_date()
-
-		if is_correct_date:
-			# добавляем запись в таблицу ra_renewal
-			db.insert_into_ra_renewal(renewal.rental_agreement_id, renewal.date_of_conclusion, renewal.end_of_term)
-			# обновляем статус в таблице rental_agreements
-			db.update_rental_agreements_status(rental_agreement_id, 'продлен')
-			flash(f'Договор успешно продлен', category='success')
-			return redirect(url_for('landlord_rental_agreements'))
-		else:
-			flash(f"Дата до которой происходит продление не может быть ранее " + 
-				  f"текущей даты оконания договора ({renewal.end_of_term_before.strftime('%d.%m.%Y')})", category='error')
-			return redirect(url_for('renew_rental_agreement', rental_agreement_id=rental_agreement_id))
-
-
-	else:
-		the_title = 'Продление договора аренды'
-		return render_template('renew_rental_agreement.html', the_title=the_title, user_name=session['user_name'], 
-															  rental_agreement_id=rental_agreement_id)
 
 
 

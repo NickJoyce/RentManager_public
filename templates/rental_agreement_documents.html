@@ -5,6 +5,7 @@
 {% endblock %}
 
 {% block main_content %} 
+
 <!-- мгновенные сообщения -->
 {% for cat, msg in get_flashed_messages(True) %}
 <div class='flash {{cat}}'>{{msg}}</div>
@@ -21,14 +22,13 @@
 	  <button class="tablinks" onclick="openData(event, 'move_in')" id="move_in_button">Акт сдачи-приемки</button>
 	  <button class="tablinks" onclick="openData(event, 'move_out')" id="move_out_button">Акт возврата</button>
 	  <button class="tablinks" onclick="openData(event, 'termination')" id="termination_button">Соглашение о расторжении</button>
-	  <button class="tablinks" onclick="openData(event, 'renewal')" id="renewal_button">Соглашение о продлении</button>
 	</div>
 
 	<!-- TAB CONTENT -->
 	<!-- agreement -->
 	<div id="agreement" class="tabcontent">
 
-		<object data="{{ url_for('static', filename=ra_pdf_file) }}" type='application/pdf' width="100%" height="600px" ></object>
+		<object data="{{ url_for('static', filename=ra_pdf) }}" type='application/pdf' width="100%" height="750px" ></object>
 
 		<div class='form_wrapper'>
 			<input type="hidden" value="info_tab" name='source'/>
@@ -99,6 +99,7 @@
 
 	<!-- things -->
 	<div id="things" class="tabcontent">
+		<object data="{{ url_for('static', filename=things_pdf) }}" type='application/pdf' width="100%" height="750px" ></object>
 		<div class='form_wrapper'>
 			<input type="hidden" value="things_tab" name='source'/>		
 			<table>
@@ -116,6 +117,7 @@
 
 	<!-- move_in -->
 	<div id="move_in" class="tabcontent">
+		<object data="{{ url_for('static', filename=move_in_pdf) }}" type='application/pdf' width="100%" height="750px" ></object>
 		<div class='form_wrapper'>
 			<input type="hidden" value="move_in_tab" name='source'/>
 			<p>Дата подписания Акта сдачи-приемки: {{ rental_agreement.move_in.date_of_conclusion }} </p>
@@ -131,6 +133,7 @@
 
 	<!-- move_out -->
 	<div id="move_out" class="tabcontent">
+		<object data="{{ url_for('static', filename=move_out_pdf) }}" type='application/pdf' width="100%" height="750px" ></object>
 		<div class='form_wrapper'>
 			<input type="hidden" value="move_out_tab" name='source'/>		
 			{% if rental_agreement.move_out %}
@@ -156,6 +159,7 @@
 
 	<!-- termination -->
 	<div id="termination" class="tabcontent">
+		<object data="{{ url_for('static', filename=termination_pdf) }}" type='application/pdf' width="100%" height="750px" ></object>
 		<div class='form_wrapper'>
 			<input type="hidden" value="termination_tab" name='source'/>		
 			{% if rental_agreement.termination %}
@@ -179,39 +183,5 @@
 			<p>---------------------------------------------------------</p>	
 		</div>
 	</div>
-
-
-	<!-- renewal -->
-	<div id="renewal" class="tabcontent">
-		<div class='form_wrapper'>
-			<input type="hidden" value="renewal_tab" name='source'/>	
-			<h4>Список дат продлений</h4>
-			<table>
-				<tr><th>Дата заключения соглашения</th><th>Продлен до</th></tr>
-				{% for data in rental_agreement.renewal %}
-				<tr>
-					<td>{{ data.date_of_conclusion }}</td>
-					<td>{{ data.end_of_term }}</td>
-				</tr>				
-				{% endfor %}
-			</table>
-			<p></p>
-
-			<p>---------------------------------------------------------</p>			
-			<p>{{ rental_agreement.renewal }}</p>
-			<p>---------------------------------------------------------</p>	
-		</div>
-	</div>
-
-
-
-
-
-
-
-
-
-
-
 </div>
 {% endblock %}

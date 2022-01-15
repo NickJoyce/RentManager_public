@@ -383,7 +383,7 @@ border: 0;
 }
 
 .add_rental_object_form_select {
-  width: 100%;
+  width: 104%;
   padding: 1px;
 }
 
@@ -421,25 +421,27 @@ font-size: 12px;
 
 /* номер договора */
 .ra_tbl tr td:nth-child(1) {width: 7%; text-align: center;}
+/* дата и время */
+.ra_tbl tr td:nth-child(2) {width: 8%; text-align: center;}
 /* объект аренды */
-.ra_tbl tr td:nth-child(2) {width: 30%;} 
+.ra_tbl tr td:nth-child(3) {width: 30%;} 
 /* наниматель */
-.ra_tbl tr td:nth-child(3) {width: 15%;}
+.ra_tbl tr td:nth-child(4) {width: 15%;}
 /* агент */
 /*.ra_tbl tr td:nth-child(4) {width: 15%;}*/
 /* статус */
-.ra_tbl tr td:nth-child(4) {width: 6%; text-align: center;}
+.ra_tbl tr td:nth-child(5) {width: 6%; text-align: center;}
+
 /* круг */
-.ra_tbl tr td:nth-child(5) {width: 2%; text-align: right; border-right: none;} 
+.ra_tbl tr td:nth-child(6) {width: 2%; text-align: right; border-right: none;} 
 /* дней до окончания  */
-.ra_tbl tr td:nth-child(6) {width: 4%; text-align: left; border-left: none;}
+.ra_tbl tr td:nth-child(7) {width: 4%; text-align: left; border-left: none;}
+
 /* документы */
-.ra_tbl tr td:nth-child(7) {width: 8%; text-align: center;}
-/* завершить */
 .ra_tbl tr td:nth-child(8) {width: 8%; text-align: center;}
-/* расторгнуть */
+/* завершить */
 .ra_tbl tr td:nth-child(9) {width: 8%; text-align: center;}
-/* продлить */
+/* расторгнуть */
 .ra_tbl tr td:nth-child(10) {width: 8%; text-align: center;}
 /* удалить */
 .ra_tbl tr td:nth-child(11) {width: 3%; text-align: center;}
