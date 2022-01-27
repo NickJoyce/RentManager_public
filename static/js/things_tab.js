@@ -62,26 +62,28 @@ function addThing(table, id_list) {
     // если это первые 4 столбца то создаем 'input'
     if (i < 4) {
       elem = document.createElement("input")
-      elem.style.width = '100%' 
       elem.required = true
       // 1-ый столбец
       if (i===0) {
+      elem.className = `things_input1`   
       elem.type = "number"
       elem.name = `number_${id}`
         // 2-ой столбец
       } else { 
         if (i===1) {
+          elem.className = `things_input2` 
           elem.type = "text"
           elem.name = `name_${id}`
         // 3-ий столбец
         } else { 
           if (i===2) {
+            elem.className = `things_input3` 
             elem.type = "number"
             elem.name = `amount_${id}`
           // 4-ый столбец    
           } else { 
+            elem.className = `things_input4` 
             elem.type = "number"
-            elem.step = '0.01'
             elem.name = `cost_${id}` 
           }
         }

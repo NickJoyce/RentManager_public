@@ -45,22 +45,22 @@ class RentalObject:
 			return f'({self.id }, {self.type}, {self.name})'
 
 class Room(RentalObject):
-	def __init__(self, rental_object_id, type_, name, status, total_area, rooms_number):
+	def __init__(self, rental_object_id, type_, name, status, total_area, total_rooms_number):
 		super().__init__(rental_object_id, type_, name, status)
 		self.total_area =  total_area # общая площадь квартиры
-		self.rooms_number = rooms_number # всего комнат в квартире
+		self.total_rooms_number = total_rooms_number # всего комнат в квартире
 
 
 class Flat(RentalObject):
-	def __init__(self, rental_object_id, type_, name, status):
+	def __init__(self, rental_object_id, type_, name, status, rooms_number):
 		super().__init__(rental_object_id, type_, name, status)
-
+		self.rooms_number = rooms_number
 
 
 class House(RentalObject):
-	def __init__(self, rental_object_id, type_, name, status):
+	def __init__(self, rental_object_id, type_, name, status,  rooms_number):
 		super().__init__(rental_object_id, type_, name, status)
-
+		self.rooms_number = rooms_number
 
 
 

@@ -22,6 +22,7 @@
 		<table class='ra_tbl'>
 			<tr>
 				<th>Номер договора</th>
+				<th>Дата и время создания</th>
 				<th>Объект аренды</th>
 				<th>Наниматель</th>
 <!-- 				<th>Агент</th> -->
@@ -30,13 +31,13 @@
 				<th></th > <!-- кнопка Документы -->
 				<th></th > <!-- кнопка Завершить -->
 				<th></th > <!-- кнопка Расторгнуть -->
-				<th></th > <!-- кнопка Продлить -->
 				<th></th> <!-- кнопка Удалить -->
 			</tr> 
 			{% for rental_agreement in rental_agreements %}
 			<tr>					
 
 				<td>{{ rental_agreement.agreement_number }}</td>
+				<td>{{ rental_agreement.datetime_of_creation.strftime("%d.%m.%Y %H:%M:%S") }}</td>
 				<td>{{ rental_agreement.rental_object.address }}</td>
 				<td>{{ rental_agreement.tenant.last_name }}
 								 {{ rental_agreement.tenant.first_name }}
@@ -53,9 +54,6 @@
 				<td> 0</td>
 				<td>
 					<button onclick="document.location='{{url_for('rental_agreement_documents', rental_agreement_id=rental_agreement.id)}}'">Документы</button>
-				</td>
-				<td>
-					
 				</td>
 				<td></td>
 				<td></td>

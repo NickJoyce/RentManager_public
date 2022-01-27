@@ -111,6 +111,10 @@ textarea {
   width: 100%;
 }
 
+.input_in_table {
+  width: 97%;
+}
+
 .input_text{
   width: 100%;
   padding-left: 2px;
@@ -223,12 +227,12 @@ background: var(--element-bg-color);
 display: grid;
 grid-template-columns: 1fr;
 grid-auto-rows: 30px;
-grid-row-gap: 1px;
 }
 
 .left_menu_item {
 background: var(--menu-item-bg-color);
 padding: 8px 0 8px 30px;
+margin-bottom: 1px;
 text-decoration: none;
 }
 
@@ -615,6 +619,14 @@ border: none;
 #things_table .col4 {width: 19%;}
 #things_table .col5 {width: 5%;}
 
+
+.things_input1{width: 86%;padding-left: 2px;}
+.things_input2{width: 97%;padding-left: 2px;}
+.things_input3{width: 86%;padding-left: 2px;}
+.things_input4{width: 90%;padding-left: 2px;}
+
+
+
 /* ------------------------- COSTA TAB  ------------------------- */
 #costs_table {
 border: none;
@@ -624,6 +636,8 @@ border: none;
 #costs_table .col1 {width: 50%;}
 #costs_table .col2 {width: 45%;}
 #costs_table .col3 {width: 5%;}
+
+.costs_input{width: 96%;padding-left: 2px;}
 
 
 /*DIV AS BUTTON*/

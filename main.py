@@ -1,7 +1,7 @@
 from werkzeug.security import generate_password_hash, check_password_hash 
 import os
 import json
-import random
+from datetime import date, datetime
 
 # ------------------------------------------------------------------------------------------------------------------------------
 from flask import Flask, render_template, request, url_for, redirect, session, flash, abort,make_response # импортируем функции модуля flask
@@ -14,8 +14,6 @@ application.config['APP_ROOT'] = os.path.dirname(os.path.abspath(__file__))
 
 # ------------------------------------------------------------------------------------------------------------------------------
 
-from datetime import date, datetime
-
 from login_checker import logged_in, logged_in_admin, logged_in_landlord, logged_in_tenant, logged_in_agent
 
 from users import User, Admin, Agent, Landlord, Tenant # пользователи
@@ -26,7 +24,7 @@ from rental_objects import RentalObject, Room, Flat, House # объекты ар
 from rental_object_data import General, ObjectData, Building, Location, Appliances, Thing, Cost
 
 from rental_agreement import RentalAgreement # договор аренд
-from rental_agreement_conditions import Conditions# условия аренды, дополнительны платежи
+from rental_agreement_conditions import Conditions# условия аренды
 from rental_agreement_data import RA_RentalObject, RA_Cost, RA_Thing, RA_Landlord, RA_Tenant, RA_Agent, MoveIn, MoveOut, Termination, Renewal
 
 # преобразования строк полученных из формы в другие типы
@@ -588,9 +586,9 @@ def landlord_rental_objects() -> 'html':
 			# добавляем добавляем недостающий для инициализации класса аргументы (total_area, rooms_number)
 			ro = Room(*rental_object+(None,)+(None,))
 		elif rental_object[1] == 'квартира':
-			ro = Flat(*rental_object)
+			ro = Flat(*rental_object+(None,))
 		elif rental_object[1] == 'дом':
-			ro = House(*rental_object)
+			ro = House(*rental_object+(None,))
 
 		rental_objects.append(ro)
 
@@ -626,7 +624,8 @@ def add_rental_object() -> 'html':
 	if request.method == 'POST':
 
 		# записываем данные в таблицу rental_objects
-		db.create_rental_object(request.form['type_id'], request.form['name'], 'свободен',session['landlord_id'])
+		db.create_rental_object(request.form['type_id'], request.form['name'], 
+								'свободен', request.form['rooms_number'],  session['landlord_id'])
 
 		# обновлем список rantal_object_id в session
 		session['rental_objects'] = db.get_rental_object_id_of_landlord(session['landlord_id'])
@@ -666,6 +665,7 @@ def edit_rental_object(rental_object_id) -> 'html':
 					db.update_rental_object_status(rental_object_id, status)
 				except:
 					pass
+				flash(f"Данные в разделе 'Информация' успешно сохранены", category='success')
 				
 
 			elif request.form['source'] == 'object_tab':
@@ -692,7 +692,7 @@ def edit_rental_object(rental_object_id) -> 'html':
 				db.set_ro_object_data_data_window_overlook(rental_object_id, od.window_overlook)
 				db.set_ro_object_data_window_frame_type(rental_object_id, od.window_frame_type)
 				db.set_ro_object_data_cooking_range_type(rental_object_id, od.cooking_range_type)
-
+				flash(f"Данные в разделе 'Объект' успешно сохранены", category='success')
 
 			elif request.form['source'] == 'building_tab':
 				b = Building(rental_object_id, request.form['building_type'], request.form['win_number'], 
@@ -704,7 +704,10 @@ def edit_rental_object(rental_object_id) -> 'html':
 				db.set_ro_building(b.rental_object_id, b.building_type, b.floors_number, 
 								   b.garbage_disposal, b.intercom, b.concierge, b.building_year)
 				db.set_ro_building_elevator(rental_object_id, b.elevator)
+				flash(f"Данные в разделе 'Здание' успешно сохранены", category='success')
 				return redirect(url_for('edit_rental_object', rental_object_id=rental_object_id))
+				
+
 
 			elif request.form['source'] == 'location_tab':
 				db.set_ro_location_data(rental_object_id, request.form['country'], 
@@ -720,8 +723,8 @@ def edit_rental_object(rental_object_id) -> 'html':
 											   request.form['floor'],
 											   request.form['coords'],
 											   request.form['nearest_metro_stations'],
-											   request.form['location_comment']
-											   )
+											   request.form['location_comment'])
+				flash(f"Данные в разделе 'Локация' успешно сохранены", category='success')
 
 
 			elif request.form['source'] == 'appliances_tab':
@@ -734,18 +737,20 @@ def edit_rental_object(rental_object_id) -> 'html':
 										  request.form['teapot'],
 										  request.form['iron'],
 										  request.form['microwave'])
+				flash(f"Данные в разделе 'Бытовая техника' успешно сохранены", category='success')
+
 
 			elif request.form['source'] == 'special_tab':
 				rental_object_type = db.get_rental_object_type_by_id(rental_object_id)
 				if rental_object_type == 'комната':
-					db.set_ro_room_data(rental_object_id, request.form['total_area'], request.form['rooms_number'])
+					db.set_ro_room_data(rental_object_id, request.form['total_area'])
 
 				elif rental_object_type == 'квартира':
 					...
 
 				elif rental_object_type == 'дом':
 					...
-					
+				flash(f"Данные в разделе '{rental_object_type.title()}' успешно сохранены", category='success')					
 
 			elif request.form['source'] == 'things_tab':
 				# загружаем список id вещей, предварительно преобразовав в список python из json
@@ -761,6 +766,8 @@ def edit_rental_object(rental_object_id) -> 'html':
 											int(request.form[f'amount_{id_}']),
 											float(request.form[f'cost_{id_}'])])
 					db.set_ro_things(rental_object_id, things_list)
+				flash(f"Данные в разделе 'Вещи' успешно сохранены", category='success')	
+
 
 			elif request.form['source'] == 'costs_tab':
 				# загружаем список id расходов, предварительно преобразовав в список python из json
@@ -792,7 +799,7 @@ def edit_rental_object(rental_object_id) -> 'html':
 					# создаем новые записи
 					for id_ in added_costs_id:
 						db.insert_ro_costs(rental_object_id, request.form[f'name_{id_}'], request.form[f'is_payer_landlord_{id_}'])
-			
+				flash(f"Данные в разделе 'Расходы' успешно сохранены", category='success')				
 
 			elif request.form['source'] == 'agent_tab':
 				# удаляем из таблице ro_id_agent_id строки для данного объекта аренды  
@@ -806,16 +813,16 @@ def edit_rental_object(rental_object_id) -> 'html':
 				# если пустая, то ничего не делаем
 				else:
 					pass			
-
+				flash(f"Данные в разделе 'Агент' успешно сохранены", category='success')	
 
 			return redirect(url_for('edit_rental_object', rental_object_id=rental_object_id))
 
 
 
 		else:
-			# создадим экземпляр класса Roon, Flat или House
+			# получим тип объекта по id
 			rental_object_type = db.get_rental_object_type_by_id(rental_object_id)
-
+			# создадим экземпляр класса Room, Flat или House
 			if rental_object_type == 'комната':
 				rental_object = Room(*db.get_rental_object_data_room(rental_object_id))
 			elif rental_object_type == 'квартира':
@@ -1077,8 +1084,12 @@ def add_rental_agreement() -> 'html':
 				db.insert_into_ra_things(rental_agreement_id, thing.thing_number, thing.thing_name, thing.amount, thing.cost)
 
 			# создаем запись в таблице ra_costs (фиксированные данные расходов на содержание в договоре)
-			for cost_data in db.get_costs_data(rental_object.id):
-				cost = Cost(*cost_data)
+			cost_for_pdf = []
+			cost_data = db.get_costs_data(rental_object.id)
+			for cost in cost_data:
+				cost = Cost(*cost)
+				cost_for_pdf.append(cost.name)
+				print(rental_agreement_id, cost.name, cost.is_payer_landlord)
 				db.insert_into_ra_costs(rental_agreement_id, cost.name, cost.is_payer_landlord)
 
 			# создаем запись в таблице ra_move_in (данные Акта сдачи-приемки)
@@ -1131,7 +1142,7 @@ def add_rental_agreement() -> 'html':
 							rental_rate = f"{int(request.form['rental_rate'])}",
 							payment_day = f"{int(request.form['payment_day'])}", 
 							deposit = f"{int(request.form['deposit'])}", 
-							costs = ['коммунальные услуги', 'электроэнергия', 'капитальный ремонт', 'интернет', 'газ'],
+							costs = cost_for_pdf,
 							cleaning_cost = f"{int(request.form['cleaning_cost'])}", 
 							start_of_term = start_of_term,
 							end_of_term = end_of_term,
@@ -1341,17 +1352,9 @@ def rental_agreement_documents(rental_agreement_id) -> 'html':
 		move_out_pdf = f'pdf/move_out/move_out_{anti_cache_part_of_pdf_name}_{rental_agreement.agreement_number}.pdf'
 		termination_pdf = f'pdf/termination/termination_{anti_cache_part_of_pdf_name}_{rental_agreement.agreement_number}.pdf'
 
-
-		response = make_response(render_template('rental_agreement_documents.html', the_title=the_title, user_name=session['user_name'], 
+		return render_template('rental_agreement_documents.html', the_title=the_title, user_name=session['user_name'], 
 								rental_agreement=rental_agreement, ra_pdf=ra_pdf, things_pdf=things_pdf, move_in_pdf =move_in_pdf,
-								move_out_pdf=move_out_pdf, termination_pdf=termination_pdf))
-
-		# запрещаем кеширование
-		response.headers["Cache-Control"] = "private, max-age=0, no-cache"
-		response.headers["Expires"] = '0'
-		response.headers["Pragma"] = "no-cache"	
-		response.headers["ETag"] = 	f'{random.randint(1, 1000)}'
-		return response
+								move_out_pdf=move_out_pdf, termination_pdf=termination_pdf)
 
 
 	else:

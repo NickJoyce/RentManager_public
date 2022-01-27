@@ -305,7 +305,7 @@ def create_ra_pdf(pdf_name = '',
 			canvas.setFont(fontName, 11)
 			canvas.drawCentredString(PAGE_WIDTH/2, PAGE_HEIGHT-152.6, f"{', '.join(costs)}")
 			# клининг
-			canvas.drawCentredString(doc.leftMargin+108*mm, PAGE_HEIGHT-177, f'{rental_rate} ({rental_rate_to_words}) руб.')
+			canvas.drawCentredString(doc.leftMargin+108*mm, PAGE_HEIGHT-177, f'{cleaning_cost} ({cleaning_cost_to_words}) руб.')
 
 			# дата начала действи договора 
 			canvas.drawCentredString(doc.leftMargin+79.8*mm, PAGE_HEIGHT-262.3, 
@@ -320,7 +320,7 @@ def create_ra_pdf(pdf_name = '',
 
 			canvas.setFont(fontName, 11)
 			# неустойка
-			canvas.drawCentredString(doc.leftMargin+59, PAGE_HEIGHT-58.2, f"{late_fee}%")
+			canvas.drawCentredString(doc.leftMargin+59, PAGE_HEIGHT-80.2, f"{late_fee}%")
 			
 			# верхняя граница грда
 			g_top = 280
@@ -530,8 +530,8 @@ def create_ra_pdf(pdf_name = '',
 		data = ['5.1. Настоящий договор может быть расторгнут в любое время по соглашению сторон.',
 				'5.2. Настоящий договор досрочному расторжению Наймодателем в одностороннем порядке не подлежит, за '+
 				'исключением следующих случаев:',
-				'5.2.1. Если наниматель не вносит плату в размере и сроки, предусмотренные в п.3.1.; 3.3.'
-				'5.2.2. Если наниматель не выполняет принятые на себя обязательства по настоящему договору.'
+				'5.2.1. Если наниматель не вносит плату в размере и сроки, предусмотренные в п.3.1.; 3.3.',
+				'5.2.2. Если наниматель не выполняет принятые на себя обязательства по настоящему договору.',
 				'5.3. При досрочном расторжении договора Наймодатель предупреждает Нанимателя в письменной форме за 30 '+
 				'дней и возвращает Нанимателю остаток внесенной вперед платы в течение 2-х дней со дня расторжения '+
 				'договора.',
@@ -548,7 +548,7 @@ def create_ra_pdf(pdf_name = '',
 			Story.append(Paragraph(p, styles["myStyle"]))
 			Story.append(PARAGRAPH_SPACER)
 
-		Story.append(SECTION_SPACER)
+		Story.append(Spacer(1, 14.8*mm))
 		Story.append(Paragraph("<para alignment ='center'>6. Ответственность сторон</para>", styles["myStyle_bold"]))
 		Story.append(PARAGRAPH_SPACER)
 		data = ['6.1. В случае невнесения в срок платы за найм Наниматель уплачивает неустойку за каждый день просрочки в '+
@@ -587,7 +587,7 @@ def create_ra_pdf(pdf_name = '',
 			Story.append(PARAGRAPH_SPACER)
 
 
-		Story.append(SECTION_SPACER)
+		Story.append(Spacer(1, 8*mm))
 		Story.append(Paragraph("<para alignment ='center'>РЕКВИЗИТЫ СТОРОН</para>", styles["myStyle_bold"]))
 
 		# конец документа
@@ -611,11 +611,6 @@ def create_things_pdf(pdf_name = '',
 	def myFirstPage(canvas, doc):
 		canvas.saveState()
 		canvas.setFont(fontName, 12)
-		# город
-		canvas.drawString(doc.leftMargin+6, PAGE_HEIGHT-28*mm, f'г. {city}')
-		# дата заключения договора
-		canvas.drawRightString(PAGE_WIDTH- doc.rightMargin - 6, PAGE_HEIGHT-28*mm, 
-							   f"«{date_of_conclusion[0]}»      {date_of_conclusion[1]}      {date_of_conclusion[2]} г.")
 
 		# нижние колонтитулы на главной странице
 		add_running_title(canvas, doc)
@@ -647,8 +642,12 @@ def create_things_pdf(pdf_name = '',
 		# начало документа
 		Story = []
 		Story.append(Paragraph(f"<para alignment='center' fontSize='12'>ОПИСЬ ИМУЩЕСТВА</para>", styles["myStyle_bold"]))
+		Story.append(PARAGRAPH_SPACER)
+		Story.append(Paragraph(
+			f"<para alignment='center' fontSize='12'>(приложение к договору №{rental_agreement_number} от " + 
+			f"«{date_of_conclusion[0]}» {date_of_conclusion[1]} {date_of_conclusion[2]} г.)</para>",
+		 	styles["myStyle_bold"]))
 		Story.append(SECTION_SPACER)
-		Story.append(TEN_mm_SPACER)
 		Story.append(Paragraph(f"<para>1. Следующее имущество находится в жилом помещении:</para>", styles["myStyle"]))
 		Story.append(PARAGRAPH_SPACER)
 
@@ -1123,7 +1122,7 @@ if __name__ == '__main__':
 	t_phone = '+79822225328',
 	t_email = 'ntash.klv@gmail.com')
 
-	# create_ra_pdf(**ra_data)	
+	create_ra_pdf(**ra_data)	
 
 	things_data = dict(	pdf_name = 'static/pdf/things/things_test.pdf',	
 						rental_agreement_number='142',
@@ -1134,7 +1133,8 @@ if __name__ == '__main__':
 					   			 (23, 'Стул', 2, 500),
 					   			 (43, 'Шкаф', 5, 4000)])
 
-	# create_things_pdf(**things_data)
+	create_things_pdf(**things_data)
+
 	move_in_data = dict(pdf_name = 'static/pdf/move_in/move_in_test.pdf',	
 						rental_agreement_number='777777',
 					    city = 'Санкт-Петербург',

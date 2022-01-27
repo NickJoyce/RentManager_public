@@ -75,7 +75,7 @@ function addCost() {
     if (i == 0) {
       elem = document.createElement("input")
       elem.type = "text"
-      elem.className = 'input_text'
+      elem.className = 'costs_input'
       elem.name = `name_${id}`
       elem.required = true
       // 2-ой столбец ('radio')
