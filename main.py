@@ -223,7 +223,8 @@ def admin_landlords() -> 'html':
 
 	add_landlord = url_for('add_landlord') # адрес ссылки для onclick
 
-	return render_template('admin_landlords.html', the_title=the_title, user_name=session['user_name'], landlords=landlords, add_landlord=add_landlord)
+	return render_template('admin_landlords.html', the_title=the_title, user_name=session['user_name'],
+						   landlords=landlords, add_landlord=add_landlord)
 
 
 
@@ -1080,7 +1081,8 @@ def add_rental_agreement() -> 'html':
 			things_for_pdf = [('№', 'Наименование предмета', 'Кол-во, шт', 'Стоимость ед., руб.')]
 			for thing_data in db.get_things(rental_object.id):
 				thing = Thing(*thing_data)
-				things_for_pdf.append((thing.thing_number, thing.thing_name, thing.amount, thing.cost))
+				things_for_pdf.append((thing.thing_number, thing.thing_name, thing.amount, int(thing.cost)))
+				print()
 				db.insert_into_ra_things(rental_agreement_id, thing.thing_number, thing.thing_name, thing.amount, thing.cost)
 
 			# создаем запись в таблице ra_costs (фиксированные данные расходов на содержание в договоре)

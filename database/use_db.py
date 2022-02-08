@@ -139,7 +139,6 @@ class UserDD:
 																   		 ) ENGINE = InnoDB""" )													
 
 		
-
 class RentalObjectDD:
 	"""Определение данных для таблиц связанных с объектом аренды"""
 	def create_all_rental_object_tables(self):
@@ -474,8 +473,6 @@ class RentalObjectDD:
 																	 		   ) ENGINE = InnoDB""" )
 
 
-
-
 class RentalAgreementDD:
 	"""Определение данных для таблиц связанных с договором аренды"""
 	def create_all_rental_agreement_tables(self):
@@ -706,8 +703,6 @@ class RentalAgreementDD:
 																			REFERENCES rental_agreements(id)
 																			ON DELETE CASCADE
 															 			) ENGINE = InnoDB""" )
-
-
 
 
 class DataDefinition(Database, UserDD, RentalObjectDD, RentalAgreementDD):
@@ -1333,9 +1328,6 @@ class UserDM:
 	def set_register_password(self, user_id, value):
 		with self.context_manager(self.config) as cursor:
 			cursor.execute("""UPDATE users_register SET password=%s WHERE user_id=%s""", (value, user_id,))
-
-
-
 
 
 class RentalObgectDM:
@@ -2460,9 +2452,6 @@ class RentalObgectDM:
 							  (total_area, rental_object_id))		
 
 
-
-
-
 class RentalAgreementDM:
 	def add_rental_agreement_status(self, status):
 		"""Добавление типа пользователей"""
@@ -2716,9 +2705,6 @@ class RentalAgreementDM:
 	def set_ra_general_conditions_payment_day(self, rental_agreement_id, value):
 		with self.context_manager(self.config) as cursor:
 			cursor.execute("""UPDATE ra_general_conditions SET payment_day=%s WHERE rental_agreement_id=%s""", (value, rental_agreement_id))		
-
-
-
 
 
 class DataManipulation(Database, UserDM, RentalObgectDM, RentalAgreementDM):

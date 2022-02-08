@@ -1,9 +1,9 @@
 # регистрируем новый шрифт (шрифт предварителньо нужно скачать)
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase.pdfmetrics import registerFont
-registerFont(TTFont('Times New Roman', 'Times_New_Roman.ttf'))
-registerFont(TTFont('Times New Roman Bold', 'Times_New_Roman_Bold.ttf'))
-registerFont(TTFont('Times New Roman Italic', 'Times_New_Roman_Italic.ttf'))
+registerFont(TTFont('Times New Roman', 'static/fonts/Times_New_Roman.ttf'))
+registerFont(TTFont('Times New Roman Bold', 'static/fonts/Times_New_Roman_Bold.ttf'))
+registerFont(TTFont('Times New Roman Italic', 'static/fonts/Times_New_Roman_Italic.ttf'))
 fontName = 'Times New Roman'
 fontName_b = 'Times New Roman Bold'
 fontName_i = 'Times New Roman Times New Roman Italic'
@@ -338,7 +338,7 @@ def create_ra_pdf(pdf_name = '',
 							  f"Паспорт: серия {serie} № {pass_number}",
 							  f"Выдан: {authority}",
 							  f"Прописан: {registration}",
-							  f"Наймодатель: _________________(_______________________)",
+							  f"{header.title()}: _________________(_______________________)",
 							  f"Телефон для связи: {phone}",
 							  f"email: {email}"]
 
@@ -607,6 +607,8 @@ def create_things_pdf(pdf_name = '',
 					  things=[]):
 	# конвертируем дату в кортеж (dd, month, yyyy)
 	date_of_conclusion = convert_data(date_of_conclusion)
+
+	print(things)
 
 	def myFirstPage(canvas, doc):
 		canvas.saveState()
@@ -1111,7 +1113,7 @@ if __name__ == '__main__':
 	l_serie = 4008,
 	l_pass_number = 522493,
 	l_authority = 'ТП№81 отдела УФМС России по Санкт-Петербургу и ленинградской обл. в центральном р-не гор. Санкт-Петербурга',
-	l_registration = 'Санкт-Петербург, ул. Гороховая 32-95',
+	l_registration = 'Санкт-Петербург, ул. Гороховая 342-34',
 	l_phone = '+79218850028',
 	l_email = 'actan-spb@mail.ru',
 
@@ -1122,7 +1124,7 @@ if __name__ == '__main__':
 	t_phone = '+79822225328',
 	t_email = 'ntash.klv@gmail.com')
 
-	create_ra_pdf(**ra_data)	
+	# create_ra_pdf(**ra_data)	
 
 	things_data = dict(	pdf_name = 'static/pdf/things/things_test.pdf',	
 						rental_agreement_number='142',
