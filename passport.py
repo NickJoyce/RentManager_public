@@ -14,14 +14,7 @@ db = DataManipulation(db_config, DBcm) # экземпляр класса для 
 
 
 class Passport:
-		
-	# _DB = None
-
-	# @property
-	# def DB(self): 
-	# 	if self._DB == None: 
-	# 		_DB = DataManipulation(db_config, DBcm)
-	# 	return _DB
+	
 
 	def __init__(self, user_id, first_name, patronymic, last_name, serie, pass_number, authority, 
 					   department_code, date_of_issue, date_of_birth, place_of_birth, registration):
@@ -64,133 +57,6 @@ if __name__ == '__main__':
 
 
 
-
-
-
-	# # Для значений в таблице обязательно должно быть соблюдено условия NOT NULL, чтобы коректно отрабатывали условия с None
-
-	# @property
-	# def user_id(self): 
-	# 	return self._user_id
-
-
-	# @property
-	# def first_name (self):
-	# 	if self._first_name == None: 
-	# 		self._first_name  = self.DB.get_passport_first_name(self.user_id)
-	# 	return self._first_name 
-	# @first_name.setter
-	# def first_name(self, value): 
-	# 	self.DB.set_passport_first_name(self.user_id, value) # записывам новое значение в БД
-	# 	self._first_name = value # присваиваем новое значение атрибуту
-
-
-	# @property
-	# def patronymic(self): 
-	# 	if self._patronymic == None: 
-	# 		self._patronymic = self.DB.get_passport_patronymic(self.user_id)
-	# 	return self._patronymic
-	# @patronymic.setter
-	# def patronymic(self, value):
-	# 	self.DB.set_passport_patronymic(self.user_id, value) # записывам новое значение в БД
-	# 	self._patronymic = value # присваиваем новое значение атрибуту
-
-	# @property
-	# def last_name(self):
-	# 	if self._last_name == None: 
-	# 		self._last_name = self.DB.get_passport_last_name(self.user_id)
-	# 	return self._last_name
-	# @last_name.setter
-	# def last_name(self, value): 
-	# 	self.DB.set_passport_last_name(self.user_id, value) # записывам новое значение в БД
-	# 	self._last_name = value # присваиваем новое значение атрибуту
-
-	# @property
-	# def serie(self): 
-	# 	if self._serie == None:
-	# 		self._serie = self.DB.get_passport_serie(self.user_id)
-	# 	return self._serie
-	# @serie.setter
-	# def serie(self, value):
-	# 	self.DB.set_passport_serie(self.user_id, value) # записывам новое значение в БД
-	# 	self._serie = value # присваиваем новое значение атрибуту
-
-	# @property
-	# def pass_number(self): 
-	# 	if self._pass_number == None:
-	# 		self._pass_number = self.DB.get_passport_pass_number(self.user_id)
-	# 	return self._pass_number
-	# @pass_number.setter
-	# def pass_number(self, value):
-	# 	self.DB.set_passport_pass_number(self.user_id, value) # записывам новое значение в БД
-	# 	self._pass_number = value # присваиваем новое значение атрибуту
-
-	# @property
-	# def authority(self): 
-	# 	if self._authority == None:
-	# 		self._authority = self.DB.get_passport_authority(self.user_id)
-	# 	return self._authority
-	# @authority.setter
-	# def authority(self, value):
-	# 	self.DB.set_passport_authority(self.user_id, value) # записывам новое значение в БД
-	# 	self._authority = value # присваиваем новое значение атрибуту
-
-
-	# @property
-	# def department_code(self): 
-	# 	if self._department_code == None:
-	# 		self._department_code = self.DB.get_passport_department_code(self.user_id)
-	# 	return self._department_code
-	# @department_code.setter
-	# def department_code(self, value): 
-	# 	self.DB.set_passport_department_code(self.user_id, value) # записывам новое значение в БД
-	# 	self._department_code = value # присваиваем новое значение атрибуту
-
-
-	# @property
-	# def date_of_issue(self): 
-	# 	if self._date_of_issue == None:
-	# 		self._date_of_issue = self.DB.get_passport_date_of_issue(self.user_id)
-	# 	return self._date_of_issue
-	# @date_of_issue.setter
-	# def date_of_issue(self, value): 
-	# 	self.DB.set_passport_date_of_issue(self.user_id, value) # записывам новое значение в БД
-	# 	self._date_of_issue = value # присваиваем новое значение атрибуту
-
-
-
-	# @property
-	# def date_of_birth(self): 
-	# 	if self._date_of_birth == None:
-	# 		self._date_of_birth = self.DB.get_passport_date_of_birth(self.user_id)
-	# 	return self._date_of_birth
-	# @date_of_birth.setter
-	# def date_of_birth(self, value):
-	# 	self.DB.set_passport_date_of_birth(self.user_id, value) # записывам новое значение в БД
-	# 	self._date_of_birth = value # присваиваем новое значение атрибуту
-
-
-	# @property
-	# def place_of_birth(self): 
-	# 	if self._place_of_birth== None:
-	# 		self._place_of_birth = self.DB.get_passport_place_of_birth(self.user_id)
-	# 	return self._place_of_birth
-	# @place_of_birth.setter
-	# def place_of_birth(self, value): 
-	# 	self.DB.set_passport_place_of_birth(self.user_id, value) # записывам новое значение в БД
-	# 	self._place_of_birth = value # присваиваем новое значение атрибуту
-
-
-
-	# @property
-	# def registration(self): 
-	# 	if self._registration == None:
-	# 		self._registration = self.DB.get_passport_registration(self.user_id)
-	# 	return self._registration
-	# @registration.setter
-	# def registration(self, value): 
-	# 	self.DB.set_passport_registration(self.user_id, value) # записывам новое значение в БД
-	# 	self._registration = value # присваиваем новое значение атрибуту
 
 
 

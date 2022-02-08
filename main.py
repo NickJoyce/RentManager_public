@@ -1577,47 +1577,7 @@ def page_not_found(error):
 
 
 if __name__ == '__main__':
-	application.run(debug=True) # запуск локально
-	# db.create_rental_object('комната', 1)
-
-	# # 
-	# print(db.get_rental_object_data(2))
-	# print(db.get_general_data(2))
-	# print(db.get_object_data(2))
-	# print(db.get_building_data(2))
-	# print(db.get_location_data(2))
-	# print(db.get_appliance_data(2))
-
-
-
-
-
-	# ПЕРЕЗАГРУЗКА ТАБЛИЦ И ТЕСТОВЫХ ДАННЫХ
-	# db_def.reload_all_tables()
-	# db.add_default_data()
-	# db.add_test_data()
-
-
-
-	# ДОБАВЛЕНИЕ ТЕСТОВЫХ ДАННЫХ ДЛЯ ВХОДА
-	# db.create_user('администратор', 'Админ Никита', '+792188550028', 'admin@admin.ru', 'admin', generate_password_hash('12345'))
-	# print(db.get_last_insert_id_users())
-
-	# landlord = Landlord(2)
-	# landlord.register.login = 'landlord'
-	# landlord.register.password = '12345'
-
-	# tenant = Tenant(3)
-	# tenant.register.login = 'tenant'
-	# tenant.register.password = '12345'
-
-
-	# agent = Agent(4)
-	# agent.register.login = 'agent'
-	# agent.register.password = '12345'
-
-
-	# db.create_landlord('Софья', '+79218899988', 'sofia@sofia.ru', 1)
+	application.run(debug=True)
 
 
 
